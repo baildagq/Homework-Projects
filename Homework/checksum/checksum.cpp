@@ -14,6 +14,9 @@ uint16_t computeIPChecksum(uint8_t *packet, size_t len) {
     size_t headerLen = (packet[0] & 0xf) * 4; // 取出headerLength后，因为单位为4byte, 再乘4
     // uint16_t *header = new uint16_t[headerLen / 2];
     uint32_t result = 0;
+    // 记录校验和，compute过程会将原始校验和更改
+    uint8_t p1 = packet[10];
+    uint8_t p2 = packet[11];
     // 将校验码置为0
     packet[10] = 0;
     packet[11] = 0;
@@ -22,6 +25,9 @@ uint16_t computeIPChecksum(uint8_t *packet, size_t len) {
         uint32_t merge = ((uint32_t)packet[i] << 8) | ((uint32_t)packet[i + 1]);
         result += merge;
     }
+    // 将校验码还原
+    packet[10] = p1;
+    packet[11] = p2;
     // 对溢出进行截断相加
     result = (result >> 16) + (result & 0xffff);
     // 取反
