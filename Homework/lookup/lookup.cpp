@@ -1,6 +1,10 @@
 #include "router.h"
 #include <stdint.h>
 #include <stdlib.h>
+#include <cstdio>
+
+
+using namespace std;
 
 /*
   RoutingTable Entry 的定义如下：
@@ -26,8 +30,52 @@
  * 插入时如果已经存在一条 addr 和 len 都相同的表项，则替换掉原有的。
  * 删除时按照 addr 和 len 匹配。
  */
+
+// // 定义map全局变量，用于存储key-value表
+// struct Key {
+//     uint32_t addr;
+//     int maskLen;
+// }
+
+// std::map<Key, RoutingTableEntry> routerTable;
+
+RoutingTableEntry routerTable[120];
+int routerTableSize = 0;
+
 void update(bool insert, RoutingTableEntry entry) {
   // TODO:
+    if (insert) {
+        // insert
+        // Key query;
+        // query.addr = entry.addr;
+        // query.len  = entry.len;
+        // if (routerTable.contains(query)) {
+        //     routerTable.erase(query);
+        // }
+        for (int i = 0;i < routerTableSize; i ++){
+            if (routerTable[i].addr  == entry.addr && routerTable[i].len == entry.len) {
+                // 存在已有表项
+                routerTable[i] = entry;
+                // printf("Yes, update, current size: %d\n", routerTableSize);
+                return;
+            }
+        }
+        // 不存在已有表项，需要新增表项
+        routerTable[routerTableSize] = entry;
+        routerTableSize += 1;
+        // printf("Yes, add, current size: %d\n", routerTableSize);
+    } else {
+        // delete
+        for (int i = 0;i < routerTableSize; i ++){
+            if (routerTable[i].addr  == entry.addr && routerTable[i].len == entry.len) {
+                // 存在已有表项
+                routerTable[i] = routerTable[routerTableSize - 1];
+                routerTableSize -= 1;
+                // printf("No, delete, current size: %d\n", routerTableSize);
+                return;
+            }
+        }
+    }
 }
 
 /**
@@ -41,5 +89,20 @@ bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index) {
   // TODO:
   *nexthop = 0;
   *if_index = 0;
-  return false;
+  uint32_t maxMask = 0;
+  // RoutingTableEntry entry;
+  bool isFind = false;
+  for (int i = 0;i < routerTableSize;i ++) {
+      uint32_t mask = 0xffffffff >> (32 - routerTable[i].len);
+      if ((routerTable[i].addr & mask) == (addr & mask)) {
+          if (routerTable[i].len > maxMask) {
+              maxMask = routerTable[i].len;
+              // entry = routerTable[i];
+              *nexthop = routerTable[i].nexthop;
+              *if_index = routerTable[i].if_index;
+              isFind = true;
+          }
+      }
+  }
+  return isFind;
 }
