@@ -12,6 +12,8 @@ extern bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index);
 extern bool forward(uint8_t *packet, size_t len);
 extern bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output);
 extern uint32_t assemble(const RipPacket *rip, uint8_t *buffer);
+extern RoutingTableEntry routerTable[120];
+extern int routerTableSize;
 
 uint8_t packet[2048];
 uint8_t output[2048];
@@ -22,6 +24,26 @@ uint8_t output[2048];
 // 你可以按需进行修改，注意端序
 in_addr_t addrs[N_IFACE_ON_BOARD] = {0x0100000a, 0x0101000a, 0x0102000a,
                                      0x0103000a};
+
+void construct_IP_UDP_header(uint32_t total_len, uint32_t src, uint32_t dst) {
+  // construct IP header
+  output[0]  = 0x45;                                                            // version | header length
+  output[1]  = 0;                                                               // DSCP
+  output[2]  = (total_len >> 8) & 0xff; output[3] = total_len & 0xff;           // Total length
+  output[4]  = 0; output[5] = 0;                                                // ID
+  output[6]  = 0; output[7] = 0;                                                // Flags
+  output[8]  = 1;                                                               // TTL
+  output[9]  = 0x11;                                                            // Protocal
+
+  *((uint32_t *)(output + 12)) = src;                                           // 12 - 15
+  *((uint32_t *)(output + 16)) = dst;                                           // 16 - 19
+
+  // construct UDP header
+  output[20] = 0x02; output[21] = 0x08;                                         // source port
+  output[22] = 0x02; output[23] = 0x08;                                         // destination port
+  output[24] = ((total_len - 20) >> 8) & 0xff;   output[25] = (total_len - 20) & 0xff;   // length
+  output[26] = 0;    output[27] = 0;                                            // checksum
+}
 
 int main(int argc, char *argv[]) {
   // 0a.
@@ -41,7 +63,8 @@ int main(int argc, char *argv[]) {
         .addr = addrs[i] & 0x00FFFFFF, // big endian
         .len = 24,        // small endian
         .if_index = i,    // small endian
-        .nexthop = 0      // big endian, means direct
+        .nexthop = 0,     // big endian, means direct
+        .metric = 0
     };
     update(true, entry);
   }
@@ -54,6 +77,37 @@ int main(int argc, char *argv[]) {
       // send complete routing table to every interface
       // ref. RFC2453 3.8
       // multicast MAC for 224.0.0.9 is 01:00:5e:00:00:09
+
+      macaddr_t multicastMac = {0x01, 0x00, 0x5e, 0x00, 0x00, 0x09};
+      uint32_t multicastIP = 0x090000e0;
+
+      // 根据routerTable 构建 RipPacket
+      RipPacket _rip;
+      _rip.numEntries = 4;
+      _rip.command = 2;
+      for (int i = 0;i < routerTableSize;i ++) {
+        uint32_t mask = 0;
+        for (int i = 0;i < routerTable[i].len;i ++) {
+          mask = mask * 2 + 1;
+        }
+        for (int i = routerTable[i].len; i < 32; i ++) {
+          mask = mask * 2;
+        }
+        _rip.entries[i].addr = routerTable[i].addr;
+        _rip.entries[i].mask = mask;
+        _rip.entries[i].nexthop = routerTable[i].nexthop;
+        _rip.entries[i].metric = routerTable[i].metric;
+      }
+
+      // packet len
+      uint32_t packetLen = 20 + 8 + 4 + routerTableSize * 20;
+      // 根据 RipPacket 更新buffer
+      assemble(&_rip, output + 20 + 8);
+      // 使所有端口发送发送广播包
+      for (uint32_t i = 0; i < N_IFACE_ON_BOARD; i++) {
+        construct_IP_UDP_header(packetLen, addrs[i], multicastIP);
+        HAL_SendIPPacket(i, output, packetLen, multicastMac);
+      }
       printf("30s Timer\n");
       last_time = time;
     }
