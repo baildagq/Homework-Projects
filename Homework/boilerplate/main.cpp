@@ -45,6 +45,11 @@ void construct_IP_UDP_header(uint32_t total_len, uint32_t src, uint32_t dst) {
   output[26] = 0;    output[27] = 0;                                            // checksum
 }
 
+uint32_t convert(uint8_t a, uint8_t b, uint8_t c, uint8_t d) {
+  // 将4个数拼成一个32位数 
+  return a << 24 + b << 16 + c << 8 + d;
+}
+
 int main(int argc, char *argv[]) {
   // 0a.
   int res = HAL_Init(1, addrs);
@@ -69,6 +74,9 @@ int main(int argc, char *argv[]) {
     update(true, entry);
   }
 
+  macaddr_t multicastMac = {0x01, 0x00, 0x5e, 0x00, 0x00, 0x09};
+  uint32_t multicastIP = 0x090000e0;
+
   uint64_t last_time = 0;
   while (1) {
     uint64_t time = HAL_GetTicks();
@@ -78,34 +86,40 @@ int main(int argc, char *argv[]) {
       // ref. RFC2453 3.8
       // multicast MAC for 224.0.0.9 is 01:00:5e:00:00:09
 
-      macaddr_t multicastMac = {0x01, 0x00, 0x5e, 0x00, 0x00, 0x09};
-      uint32_t multicastIP = 0x090000e0;
 
-      // 根据routerTable 构建 RipPacket
-      RipPacket _rip;
-      _rip.numEntries = 4;
-      _rip.command = 2;
-      for (int i = 0;i < routerTableSize;i ++) {
-        uint32_t mask = 0;
-        for (int i = 0;i < routerTable[i].len;i ++) {
-          mask = mask * 2 + 1;
-        }
-        for (int i = routerTable[i].len; i < 32; i ++) {
-          mask = mask * 2;
-        }
-        _rip.entries[i].addr = routerTable[i].addr;
-        _rip.entries[i].mask = mask;
-        _rip.entries[i].nexthop = routerTable[i].nexthop;
-        _rip.entries[i].metric = routerTable[i].metric;
-      }
 
-      // packet len
-      uint32_t packetLen = 20 + 8 + 4 + routerTableSize * 20;
-      // 根据 RipPacket 更新buffer
-      assemble(&_rip, output + 20 + 8);
       // 使所有端口发送发送广播包
       for (uint32_t i = 0; i < N_IFACE_ON_BOARD; i++) {
+        // 根据routerTable 构建 RipPacket
+        RipPacket _rip;
+        _rip.numEntries = 4;
+        _rip.command = 2;
+        int routerItemNum = 0;
+        for (int j = 0;j < routerTableSize;j ++) {
+          // 水平分割, 需要将改端口出的表项去掉
+          if (routerTable[j].if_index == i)  {
+            continue;
+          }
+          // 统计本端口考虑水平分割后可以接受的所有路由表的项数
+          routerItemNum ++;
+          uint32_t mask = 0;
+          for (int i = 0;i < routerTable[i].len;i ++) {
+            mask = mask * 2 + 1;
+          }
+          for (int i = routerTable[i].len; i < 32; i ++) {
+            mask = mask * 2;
+          }
+          _rip.entries[i].addr = routerTable[i].addr;
+          _rip.entries[i].mask = mask;
+          _rip.entries[i].nexthop = routerTable[i].nexthop;
+          _rip.entries[i].metric = routerTable[i].metric;
+        }
+        // packet len
+        uint32_t packetLen = 20 + 8 + 4 + routerItemNum * 20;
+        // 构建 header
         construct_IP_UDP_header(packetLen, addrs[i], multicastIP);
+        // 根据 RipPacket 更新buffer
+        assemble(&_rip, output + 20 + 8);
         HAL_SendIPPacket(i, output, packetLen, multicastMac);
       }
       printf("30s Timer\n");
@@ -138,6 +152,9 @@ int main(int argc, char *argv[]) {
     in_addr_t src_addr, dst_addr;
     // extract src_addr and dst_addr from packet
     // big endian
+    src_addr = convert(packet[12], packet[13], packet[14], packet[15]);
+    dst_addr = convert(packet[16], packet[17], packet[18], packet[19]);
+    
 
     // 2. check whether dst is me
     bool dst_is_me = false;
@@ -147,7 +164,11 @@ int main(int argc, char *argv[]) {
         break;
       }
     }
+
     // TODO: Handle rip multicast address(224.0.0.9)?
+    if (memcmp(&dst_addr, &multicastIP, sizeof(in_addr_t)) == 0) {
+      dst_is_me = true;
+    }
 
     if (dst_is_me) {
       // 3a.1
