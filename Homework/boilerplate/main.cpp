@@ -6,9 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+extern uint16_t computeIPChecksum(uint8_t *packet, size_t len);
 extern bool validateIPChecksum(uint8_t *packet, size_t len);
 extern void update(bool insert, RoutingTableEntry entry);
-extern bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index);
+extern bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index, uint32_t *idx);
 extern bool forward(uint8_t *packet, size_t len);
 extern bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output);
 extern uint32_t assemble(const RipPacket *rip, uint8_t *buffer);
@@ -48,6 +49,30 @@ void construct_IP_UDP_header(uint32_t total_len, uint32_t src, uint32_t dst) {
 uint32_t convert(uint8_t a, uint8_t b, uint8_t c, uint8_t d) {
   // 将4个数拼成一个32位数 
   return a << 24 + b << 16 + c << 8 + d;
+}
+
+uint32_t mask_to_len(uint32_t mask) {
+  int zeroNum = 0;
+  for(int i = 0;i < 32;i ++) {
+    if (mask % 2 == 0) {
+      mask >> 1;
+      zeroNum ++;
+    } else {
+      break;
+    } 
+  }
+  return 32 - zeroNum;
+}
+
+uint32_t len_to_mask(uint32_t len) {
+  uint32_t mask = 0;
+  for (int h = 0;h < len;h ++) {
+    mask = mask * 2 + 1;
+  }
+  for (int h = len; h < 32; h ++) {
+    mask = mask * 2;
+  }
+  return mask;
 }
 
 int main(int argc, char *argv[]) {
@@ -92,8 +117,6 @@ int main(int argc, char *argv[]) {
       for (uint32_t i = 0; i < N_IFACE_ON_BOARD; i++) {
         // 根据routerTable 构建 RipPacket
         RipPacket _rip;
-        _rip.numEntries = 4;
-        _rip.command = 2;
         int routerItemNum = 0;
         for (int j = 0;j < routerTableSize;j ++) {
           // 水平分割, 需要将改端口出的表项去掉
@@ -102,22 +125,22 @@ int main(int argc, char *argv[]) {
           }
           // 统计本端口考虑水平分割后可以接受的所有路由表的项数
           routerItemNum ++;
-          uint32_t mask = 0;
-          for (int i = 0;i < routerTable[i].len;i ++) {
-            mask = mask * 2 + 1;
-          }
-          for (int i = routerTable[i].len; i < 32; i ++) {
-            mask = mask * 2;
-          }
-          _rip.entries[i].addr = routerTable[i].addr;
-          _rip.entries[i].mask = mask;
-          _rip.entries[i].nexthop = routerTable[i].nexthop;
-          _rip.entries[i].metric = routerTable[i].metric;
+          uint32_t mask = len_to_mask(routerTable[j].len);
+          _rip.entries[j].addr = routerTable[j].addr;
+          _rip.entries[j].mask = mask;
+          _rip.entries[j].nexthop = routerTable[j].nexthop;
+          _rip.entries[j].metric = routerTable[j].metric;
         }
+        _rip.numEntries = routerItemNum;
+        _rip.command = 2;
         // packet len
         uint32_t packetLen = 20 + 8 + 4 + routerItemNum * 20;
         // 构建 header
         construct_IP_UDP_header(packetLen, addrs[i], multicastIP);
+        // 根据 header 计算 checksum
+        uint16_t sum = computeIPChecksum(output, packetLen);
+        output[10] = (sum >> 8) & 0xff;
+        output[11] = sum & 0xff;
         // 根据 RipPacket 更新buffer
         assemble(&_rip, output + 20 + 8);
         HAL_SendIPPacket(i, output, packetLen, multicastMac);
@@ -152,6 +175,7 @@ int main(int argc, char *argv[]) {
     in_addr_t src_addr, dst_addr;
     // extract src_addr and dst_addr from packet
     // big endian
+    // TODO 
     src_addr = convert(packet[12], packet[13], packet[14], packet[15]);
     dst_addr = convert(packet[16], packet[17], packet[18], packet[19]);
     
@@ -179,22 +203,68 @@ int main(int argc, char *argv[]) {
           // 3a.3 request, ref. RFC2453 3.9.1
           // only need to respond to whole table requests in the lab
           RipPacket resp;
+
+
+
+
+
+          //
+          resp.numEntries = 4;
+          resp.command = 2;
+          int routerItemNum = 0;
+          for (int j = 0;j < routerTableSize;j ++) {
+            // 水平分割, 需要将改端口出的表项去掉
+            if (routerTable[j].if_index == if_index)  {
+              continue;
+            }
+            // 统计本端口考虑水平分割后可以接受的所有路由表的项数
+            routerItemNum ++;
+            uint32_t mask = 0;
+            for (int h = 0;h < routerTable[j].len;h ++) {
+              mask = mask * 2 + 1;
+            }
+            for (int h = routerTable[j].len; h < 32; h ++) {
+              mask = mask * 2;
+            }
+            resp.entries[j].addr = routerTable[j].addr;
+            resp.entries[j].mask = mask;
+            resp.entries[j].nexthop = routerTable[j].nexthop;
+            resp.entries[j].metric = routerTable[j].metric;
+          }
+
+          // packet len
+          uint32_t packetLen = 20 + 8 + 4 + routerItemNum * 20;
+          // 构建 header
+          construct_IP_UDP_header(packetLen, addrs[if_index], src_addr);
+          // 根据 header 计算 checksum
+          uint16_t sum = computeIPChecksum(output, packetLen);
+          output[10] = (sum >> 8) & 0xff;
+          output[11] = sum & 0xff;
+          // 根据 RipPacket 更新buffer
+          assemble(&resp, output + 20 + 8);
+          HAL_SendIPPacket(if_index, output, packetLen, multicastMac);
+
+
+
+
+
+
           // TODO: fill resp
-          // assemble
-          // IP
-          output[0] = 0x45;
-          // ...
-          // UDP
-          // port = 520
-          output[20] = 0x02;
-          output[21] = 0x08;
-          // ...
-          // RIP
-          uint32_t rip_len = assemble(&resp, &output[20 + 8]);
-          // checksum calculation for ip and udp
-          // if you don't want to calculate udp checksum, set it to zero
-          // send it back
-          HAL_SendIPPacket(if_index, output, rip_len + 20 + 8, src_mac);
+          // // assemble
+          // // IP
+          // output[0] = 0x45;
+          // // ...
+          // // UDP
+          // // port = 520
+          // output[20] = 0x02;
+          // output[21] = 0x08;
+          // // ...
+          // // RIP
+          // uint32_t rip_len = assemble(&resp, &output[20 + 8]);
+          // // checksum calculation for ip and udp
+          // // if you don't want to calculate udp checksum, set it to zero
+          // // send it back
+          // HAL_SendIPPacket(if_index, output, rip_len + 20 + 8, src_mac);
         } else {
           // 3a.2 response, ref. RFC2453 3.9.2
           // update routing table
@@ -203,14 +273,46 @@ int main(int argc, char *argv[]) {
           // what is missing from RoutingTableEntry?
           // TODO: use query and update
           // triggered updates? ref. RFC2453 3.10.1
+          for (int i = 0;i < rip.numEntries;i ++) {
+            RipEntry& entry = rip.entries[i];
+            uint32_t nexthop, index, idx;
+            int metric = entry.metric + 1;
+            if (query(entry.addr, &nexthop, &index, &idx)) {
+              if (metric > 16) {
+                // 删除
+                routerTable[idx] = routerTable[routerTableSize - 1];
+                routerTableSize -= 1;
+              } else if (index == if_index || metric < routerTable[idx].metric) {
+                  // 无论如何都更新 || metric < currentMetric才会更新
+                  RoutingTableEntry new_entry;
+                  new_entry.addr = entry.addr;
+                  new_entry.if_index = if_index;
+                  new_entry.len = mask_to_len(entry.mask);
+                  new_entry.nexthop = src_addr;
+                  new_entry.metric = metric; 
+                  routerTable[idx] = new_entry;
+              }
+            } else if (metric <= 16) {
+                // 小于等于16且已有表中不存在，则新加
+                RoutingTableEntry new_entry;
+                new_entry.addr = entry.addr;
+                new_entry.if_index = if_index;
+                new_entry.len = mask_to_len(entry.mask);
+                new_entry.nexthop = src_addr;
+                new_entry.metric = metric; 
+                // 新加
+                routerTable[routerTableSize] = new_entry;
+                routerTableSize += 1;
+            }
+          }
         }
       }
     } else {
       // 3b.1 dst is not me
       // forward
       // beware of endianness
-      uint32_t nexthop, dest_if;
-      if (query(dst_addr, &nexthop, &dest_if)) {
+      uint32_t nexthop, dest_if, idx;
+      if (query(dst_addr, &nexthop, &dest_if, &idx)) {
         // found
         macaddr_t dest_mac;
         // direct routing
@@ -223,6 +325,9 @@ int main(int argc, char *argv[]) {
           // update ttl and checksum
           forward(output, res);
           // TODO: you might want to check ttl=0 case
+          if (packet[8] == 0) {
+            continue;
+          }
           HAL_SendIPPacket(dest_if, output, res, dest_mac);
         } else {
           // not found
