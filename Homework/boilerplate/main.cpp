@@ -278,12 +278,13 @@ int main(int argc, char *argv[]) {
             uint32_t nexthop, index, idx;
             int metric = entry.metric + 1;
             if (query(entry.addr, &nexthop, &index, &idx)) {
-              if (metric > 16) {
-                // 删除
-                routerTable[idx] = routerTable[routerTableSize - 1];
-                routerTableSize -= 1;
-              } else if (index == if_index || metric < routerTable[idx].metric) {
-                  // 无论如何都更新 || metric < currentMetric才会更新
+              if (index == if_index) {
+                if (metric > 16) {
+                  // 删除
+                  routerTable[idx] = routerTable[routerTableSize - 1];
+                  routerTableSize -= 1;
+                } else {
+                  // 无论好坏都更新
                   RoutingTableEntry new_entry;
                   new_entry.addr = entry.addr;
                   new_entry.if_index = if_index;
@@ -291,6 +292,16 @@ int main(int argc, char *argv[]) {
                   new_entry.nexthop = src_addr;
                   new_entry.metric = metric; 
                   routerTable[idx] = new_entry;
+                }
+              } else if (metric < routerTable[idx].metric) {
+                // 只有变好的情况才会更新
+                RoutingTableEntry new_entry;
+                new_entry.addr = entry.addr;
+                new_entry.if_index = if_index;
+                new_entry.len = mask_to_len(entry.mask);
+                new_entry.nexthop = src_addr;
+                new_entry.metric = metric; 
+                routerTable[idx] = new_entry;
               }
             } else if (metric <= 16) {
                 // 小于等于16且已有表中不存在，则新加
