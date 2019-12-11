@@ -60,7 +60,7 @@ uint32_t mask_to_len(uint32_t mask) {
   int zeroNum = 0;
   for(int i = 0;i < 32;i ++) {
     if (mask % 2 == 0) {
-      mask >> 1;
+      mask = mask >> 1;
       zeroNum ++;
     } else {
       break;
@@ -70,16 +70,21 @@ uint32_t mask_to_len(uint32_t mask) {
 }
 
 uint32_t len_to_mask(uint32_t len) {
-  return ntohl(0xffffff << (32 - len));
+  return 0xffffffff << (32 - len);
 }
 
 bool isExist(uint32_t addr, uint32_t len, uint32_t *idx) {
+  // printf("begin find if isExist\n");
   for (int i = 0;i < routerTableSize;i ++) {
+    // printf("addr1 %08x  addr2 %08x \n", addr, routerTable[i].addr);
+    // printf("len1  %08x  len2  %08x \n", len, routerTable[i].len);
     if (addr == routerTable[i].addr && len == routerTable[i].len) {
       *idx = i;
+      // printf("find!!!!\n");
       return true;
     }
   }
+  // printf("end find if isExist\n");
   return false;
 }
 
@@ -113,7 +118,7 @@ int main(int argc, char *argv[]) {
   uint64_t last_time = 0;
   while (1) {
     uint64_t time = HAL_GetTicks();
-    if (time > last_time + 30 * 1000) {
+    if (time > last_time + 5 * 1000) {
       // What to do?
       // send complete routing table to every interface
       // ref. RFC2453 3.8
@@ -131,19 +136,21 @@ int main(int argc, char *argv[]) {
           if (routerTable[j].if_index == i)  {
             continue;
           }
+          // printf("update len %d\n", routerTable[j].len);
+          uint32_t mask = len_to_mask(routerTable[j].len);
+          _rip.entries[routerItemNum].addr = routerTable[j].addr;
+          _rip.entries[routerItemNum].mask = ntohl(mask);
+          _rip.entries[routerItemNum].nexthop = routerTable[j].nexthop;
+          _rip.entries[routerItemNum].metric = routerTable[j].metric;
+          // printf("mask!!!  %08x\n", ntohl(mask));
           // 统计本端口考虑水平分割后可以接受的所有路由表的项数
           routerItemNum ++;
-          uint32_t mask = len_to_mask(routerTable[j].len);
-          _rip.entries[j].addr = routerTable[j].addr;
-          _rip.entries[j].mask = mask;
-          _rip.entries[j].nexthop = routerTable[j].nexthop;
-          _rip.entries[j].metric = routerTable[j].metric;
         }
         _rip.numEntries = routerItemNum;
         _rip.command = 2;
         // packet len
         uint32_t packetLen = 20 + 8 + 4 + routerItemNum * 20;
-        printf("multi broadcast entry num: %d packlen: %d\n", routerItemNum, packetLen);
+        printf("multi broadcast entry num: %d packlen: %d\n\n", routerItemNum, packetLen);
         // 构建 header
         construct_IP_UDP_header(packetLen, addrs[i], multicastIP);
         // 根据 header 计算 checksum
@@ -153,8 +160,32 @@ int main(int argc, char *argv[]) {
         // 根据 RipPacket 更新buffer
         assemble(&_rip, output + 20 + 8);
         HAL_SendIPPacket(i, output, packetLen, multicastMac);
+
+
+        printf("FUCK! multicast if_index : %d \n", i);
+        printf("current my routerTable\n");
+        for (int i = 0;i < routerTableSize;i ++) {
+          printf("addr: %08x  len: %08x  if_index: %08x nexthop: %08x  metric: %08x\n", 
+              routerTable[i].addr,
+              routerTable[i].len,
+              routerTable[i].if_index,
+              routerTable[i].nexthop,
+              routerTable[i].metric
+              );
+        }
+        printf("the rip packet that I will send\n");
+        for (int i = 0;i < _rip.numEntries;i ++) {
+          printf("addr: %08x  mask: %08x  nexthop: %08x  metric: %08x\n", 
+              _rip.entries[i].addr, 
+              _rip.entries[i].mask, 
+              _rip.entries[i].nexthop, 
+              _rip.entries[i].metric
+              );
+        }
+        printf("\n\n\n\n");
+
       }
-      printf("30s Timer\n");
+      printf("5s Timer\n");
       last_time = time;
     }
 
@@ -215,8 +246,6 @@ int main(int argc, char *argv[]) {
 
 
 
-
-
           //
           resp.numEntries = 4;
           resp.command = 2;
@@ -228,15 +257,9 @@ int main(int argc, char *argv[]) {
             }
             // 统计本端口考虑水平分割后可以接受的所有路由表的项数
             routerItemNum ++;
-            uint32_t mask = 0;
-            for (int h = 0;h < routerTable[j].len;h ++) {
-              mask = mask * 2 + 1;
-            }
-            for (int h = routerTable[j].len; h < 32; h ++) {
-              mask = mask * 2;
-            }
+            uint32_t mask = len_to_mask(routerTable[j].len);
             resp.entries[j].addr = routerTable[j].addr;
-            resp.entries[j].mask = mask;
+            resp.entries[j].mask = ntohl(mask);
             resp.entries[j].nexthop = routerTable[j].nexthop;
             resp.entries[j].metric = routerTable[j].metric;
           }
@@ -282,29 +305,61 @@ int main(int argc, char *argv[]) {
           // what is missing from RoutingTableEntry?
           // TODO: use query and update
           // triggered updates? ref. RFC2453 3.10.1
+          printf("if_index: %d\n", if_index);
+          printf("all give me rip\n");
+          for (int i = 0;i < rip.numEntries;i ++) {
+            printf("addr: %08x  mask: %08x  nexthop: %08x  metric: %08x\n", rip.entries[i].addr, rip.entries[i].mask, rip.entries[i].nexthop, rip.entries[i].metric);
+          }
+          printf("all my router\n");
+          for (int i = 0;i < routerTableSize;i ++) {
+            printf("addr: %08x  len: %08x  if_index: %08x nexthop: %08x  metric: %08x\n", 
+                routerTable[i].addr,
+                routerTable[i].len,
+                routerTable[i].if_index,
+                routerTable[i].nexthop,
+                routerTable[i].metric
+                );
+          }
+          printf("\n");
+          bool ifupdate = false;
           for (int i = 0;i < rip.numEntries;i ++) {
             RipEntry& entry = rip.entries[i];
             uint32_t idx;
-            int metric = entry.metric + 1;
+            uint32_t metric = ntohl(entry.metric) + 1;
             int entrylen = mask_to_len(ntohl(entry.mask));
             if (isExist(entry.addr, entrylen, &idx)) {
+                  if (routerTable[idx].nexthop != 0) {
+
               if (routerTable[idx].if_index == if_index) {
                 if (metric > 16) {
-                  // 删除
-                  routerTable[idx] = routerTable[routerTableSize - 1];
-                  routerTableSize -= 1;
+                  // if (routerTable[idx].nexthop != 0) {
+                    // 判断不是直连路由
+                    // 删除
+                    routerTable[idx] = routerTable[routerTableSize - 1];
+                    routerTableSize -= 1;
+                    ifupdate = true;
+                    printf("  delete addr: %08x\n", entry.addr);
+                  // }
                 } else {
                   // 无论好坏都更新
                   routerTable[i].if_index = if_index;
                   routerTable[i].nexthop = src_addr;
-                  routerTable[i].metric = metric; 
+                  routerTable[i].metric = ntohl(metric); 
+                  ifupdate = true;
+                  printf("  update existed & index equal: %08x\n", entry.addr);
                 }
-              } else if (metric < routerTable[idx].metric) {
+              } else if (metric < ntohl(routerTable[idx].metric)) {
                 // 只有变好的情况才会更新
                 routerTable[i].if_index = if_index;
                 routerTable[i].nexthop = src_addr;
-                routerTable[i].metric = metric; 
+                routerTable[i].metric = ntohl(metric); 
+                  printf("  update existed but index not-equal: %08x\n", entry.addr);
+                  ifupdate = true;
               }
+
+
+
+                  }
             } else if (metric <= 16) {
                 // 小于等于16且已有表中不存在，则新加
                 RoutingTableEntry new_entry;
@@ -312,11 +367,29 @@ int main(int argc, char *argv[]) {
                 new_entry.if_index = if_index;
                 new_entry.len = mask_to_len(ntohl(entry.mask));
                 new_entry.nexthop = src_addr;
-                new_entry.metric = metric; 
+                new_entry.metric = ntohl(metric); 
                 routerTable[routerTableSize] = new_entry;
                 routerTableSize += 1;
+                  ifupdate = true;
+                  printf("  add new: %08x\n", entry.addr);
             }
           }
+          if (ifupdate) {
+            printf("\n update something!\n\n");
+          } else {
+            printf("\n nothing update!\n\n");
+          }
+          printf("after update all my router\n");
+          for (int i = 0;i < routerTableSize;i ++) {
+            printf("addr: %08x  len: %08x  if_index: %08x nexthop: %08x  metric: %08x\n", 
+                routerTable[i].addr,
+                routerTable[i].len,
+                routerTable[i].if_index,
+                routerTable[i].nexthop,
+                routerTable[i].metric
+                );
+          }
+          printf("\n\n\n\n");
         }
       }
     } else {
