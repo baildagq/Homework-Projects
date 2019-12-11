@@ -9,7 +9,7 @@
 extern uint16_t computeIPChecksum(uint8_t *packet, size_t len);
 extern bool validateIPChecksum(uint8_t *packet, size_t len);
 extern void update(bool insert, RoutingTableEntry entry);
-extern bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index, uint32_t *idx);
+extern bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index);
 extern bool forward(uint8_t *packet, size_t len);
 extern bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output);
 extern uint32_t assemble(const RipPacket *rip, uint8_t *buffer);
@@ -73,6 +73,16 @@ uint32_t len_to_mask(uint32_t len) {
     mask = mask * 2;
   }
   return mask;
+}
+
+bool isExist(uint32_t addr, uint32_t len, uint32_t *idx) {
+  for (int i = 0;i < routerTableSize;i ++) {
+    if (addr == routerTable[i].addr && len == routerTable[i].len) {
+      *idx = i;
+      return true;
+    }
+  }
+  return false;
 }
 
 int main(int argc, char *argv[]) {
@@ -275,33 +285,26 @@ int main(int argc, char *argv[]) {
           // triggered updates? ref. RFC2453 3.10.1
           for (int i = 0;i < rip.numEntries;i ++) {
             RipEntry& entry = rip.entries[i];
-            uint32_t nexthop, index, idx;
+            uint32_t idx;
             int metric = entry.metric + 1;
-            if (query(entry.addr, &nexthop, &index, &idx)) {
-              if (index == if_index) {
+            int entrylen = mask_to_len(entry.mask);
+            if (isExist(entry.addr, entrylen, &idx)) {
+              if (routerTable[idx].if_index == if_index) {
                 if (metric > 16) {
                   // 删除
                   routerTable[idx] = routerTable[routerTableSize - 1];
                   routerTableSize -= 1;
                 } else {
                   // 无论好坏都更新
-                  RoutingTableEntry new_entry;
-                  new_entry.addr = entry.addr;
-                  new_entry.if_index = if_index;
-                  new_entry.len = mask_to_len(entry.mask);
-                  new_entry.nexthop = src_addr;
-                  new_entry.metric = metric; 
-                  routerTable[idx] = new_entry;
+                  routerTable[i].if_index = if_index;
+                  routerTable[i].nexthop = src_addr;
+                  routerTable[i].metric = metric; 
                 }
               } else if (metric < routerTable[idx].metric) {
                 // 只有变好的情况才会更新
-                RoutingTableEntry new_entry;
-                new_entry.addr = entry.addr;
-                new_entry.if_index = if_index;
-                new_entry.len = mask_to_len(entry.mask);
-                new_entry.nexthop = src_addr;
-                new_entry.metric = metric; 
-                routerTable[idx] = new_entry;
+                routerTable[i].if_index = if_index;
+                routerTable[i].nexthop = src_addr;
+                routerTable[i].metric = metric; 
               }
             } else if (metric <= 16) {
                 // 小于等于16且已有表中不存在，则新加
@@ -311,7 +314,6 @@ int main(int argc, char *argv[]) {
                 new_entry.len = mask_to_len(entry.mask);
                 new_entry.nexthop = src_addr;
                 new_entry.metric = metric; 
-                // 新加
                 routerTable[routerTableSize] = new_entry;
                 routerTableSize += 1;
             }
@@ -323,7 +325,7 @@ int main(int argc, char *argv[]) {
       // forward
       // beware of endianness
       uint32_t nexthop, dest_if, idx;
-      if (query(dst_addr, &nexthop, &dest_if, &idx)) {
+      if (query(dst_addr, &nexthop, &dest_if)) {
         // found
         macaddr_t dest_mac;
         // direct routing

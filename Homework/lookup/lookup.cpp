@@ -47,12 +47,6 @@ void update(bool insert, RoutingTableEntry entry) {
   // TODO:
     if (insert) {
         // insert
-        // Key query;
-        // query.addr = entry.addr;
-        // query.len  = entry.len;
-        // if (routerTable.contains(query)) {
-        //     routerTable.erase(query);
-        // }
         for (int i = 0;i < routerTableSize; i ++){
             if (routerTable[i].addr  == entry.addr && routerTable[i].len == entry.len) {
                 // 存在已有表项
@@ -87,18 +81,9 @@ void update(bool insert, RoutingTableEntry entry) {
  * @return 查到则返回 true ，没查到则返回 false
  */
 
-uint32_t len_to_mask(uint32_t len) {
-  uint32_t mask = 0;
-  for (int h = 0;h < len;h ++) {
-    mask = mask * 2 + 1;
-  }
-  for (int h = len; h < 32; h ++) {
-    mask = mask * 2;
-  }
-  return mask;
-}
+extern uint32_t len_to_mask(uint32_t len);
 
-bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index, uint32_t *idx) {
+bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index) {
   // TODO:
   *nexthop = 0;
   *if_index = 0;
@@ -117,7 +102,6 @@ bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index, uint32_t *idx) 
       if ((ntohl(routerTable[i].addr) & mask) == (ntohl(addr) & mask)) {
           if (routerTable[i].len > maxMask) {
               maxMask = routerTable[i].len;
-              // entry = routerTable[i];
               *nexthop = routerTable[i].nexthop;
               *if_index = routerTable[i].if_index;
               isFind = true;
