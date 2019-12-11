@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 extern uint16_t computeIPChecksum(uint8_t *packet, size_t len);
 extern bool validateIPChecksum(uint8_t *packet, size_t len);
@@ -50,9 +51,9 @@ void construct_IP_UDP_header(uint32_t total_len, uint32_t src, uint32_t dst) {
   output[26] = 0;    output[27] = 0;                                            // checksum
 }
 
-uint32_t convert(uint8_t a, uint8_t b, uint8_t c, uint8_t d) {
+uint32_t convert(uint32_t a, uint32_t b, uint32_t c, uint32_t d) {
   // 将4个数拼成一个32位数 
-  return a << 24 + b << 16 + c << 8 + d;
+  return (a << 24) + (b << 16) + (c << 8) + (d);
 }
 
 uint32_t mask_to_len(uint32_t mask) {
@@ -69,14 +70,7 @@ uint32_t mask_to_len(uint32_t mask) {
 }
 
 uint32_t len_to_mask(uint32_t len) {
-  uint32_t mask = 0;
-  for (int h = 0;h < len;h ++) {
-    mask = mask * 2 + 1;
-  }
-  for (int h = len; h < 32; h ++) {
-    mask = mask * 2;
-  }
-  return mask;
+  return ntohl(0xffffff << (32 - len));
 }
 
 bool isExist(uint32_t addr, uint32_t len, uint32_t *idx) {
@@ -108,7 +102,7 @@ int main(int argc, char *argv[]) {
         .len = 24,        // small endian
         .if_index = i,    // small endian
         .nexthop = 0,     // big endian, means direct
-        .metric = 1
+        .metric = ntohl(1)
     };
     update(true, entry);
   }
@@ -191,8 +185,8 @@ int main(int argc, char *argv[]) {
     // extract src_addr and dst_addr from packet
     // big endian
     // TODO 
-    src_addr = convert(packet[12], packet[13], packet[14], packet[15]);
-    dst_addr = convert(packet[16], packet[17], packet[18], packet[19]);
+    src_addr = ntohl(convert(packet[12], packet[13], packet[14], packet[15]));
+    dst_addr = ntohl(convert(packet[16], packet[17], packet[18], packet[19]));
     
 
     // 2. check whether dst is me
@@ -292,7 +286,7 @@ int main(int argc, char *argv[]) {
             RipEntry& entry = rip.entries[i];
             uint32_t idx;
             int metric = entry.metric + 1;
-            int entrylen = mask_to_len(entry.mask);
+            int entrylen = mask_to_len(ntohl(entry.mask));
             if (isExist(entry.addr, entrylen, &idx)) {
               if (routerTable[idx].if_index == if_index) {
                 if (metric > 16) {
@@ -316,7 +310,7 @@ int main(int argc, char *argv[]) {
                 RoutingTableEntry new_entry;
                 new_entry.addr = entry.addr;
                 new_entry.if_index = if_index;
-                new_entry.len = mask_to_len(entry.mask);
+                new_entry.len = mask_to_len(ntohl(entry.mask));
                 new_entry.nexthop = src_addr;
                 new_entry.metric = metric; 
                 routerTable[routerTableSize] = new_entry;
