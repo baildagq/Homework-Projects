@@ -1,0 +1,87 @@
+sudo ip netns add net0 # 创建名为 "net0" 的 namespace
+sudo ip netns add net1
+sudo ip link add veth-net0 type veth peer name veth-net1 # 创建一对相互连接的 veth pair
+sudo ip link set veth-net0 netns net0 # 将 veth 一侧加入到一个 namespace 中
+sudo ip link set veth-net1 netns net1 # 配置 veth 另一侧
+sudo ip netns exec net0 ip link set veth-net0 up
+sudo ip netns exec net0 ip addr add 10.1.1.1/24 dev veth-net0 # 给 veth 一侧配上 ip 地址
+sudo ip netns exec net1 ip link set veth-net1 up
+sudo ip netns exec net1 ip addr add 10.1.1.2/24 dev veth-net1
+
+add direct route for PC1 & PC2:
+sudo ip ro add default via 192.168.1.1 dev veth-PC1
+sudo ip ro add default via 192.168.5.2 dev veth-PC2
+
+ping test:
+sudo ip netns exec net0 ping 10.1.1.2
+
+bash:
+sudo ip netns exec net0 bash
+
+# bird:
+bird -d -c bird_conf_R1.conf -P bird_R1.pid -s bird_R1.socket
+bird -d -c bird_conf_R3.conf -P bird_R3.pid -s bird_R3.socket 
+
+# bird for linux virtual machine:
+bird -d -c bird_conf_R1.conf -P /home/bird_R1.pid -s /home/bird_R1.socket
+bird -d -c bird_conf_R3.conf -P /home/bird_R3.pid -s /home/bird_R3.socket
+
+# Enable auto forwarding in linux, in one bash:
+echo 1 > /proc/sys/net/ipv4/conf/all/forwarding
+sudo ip netns exec R1 sysctl -w net.ipv4.ip_forward=1
+
+Delete auto forwarding in R2:
+sudo ip a delete 192.168.3.2/24 dev veth-R2-1
+sudo ip a delete 192.168.4.1/24 dev veth-R2-2
+
+mkdir build
+cd build
+cmake .. -DBACKEND=Linux  # cmake .. -DHAL_PLATFORM_TESTING=Linux
+make router_hal
+make shell
+cd Example
+sudo ./shell
+
+setup 5 links (PC-R-R-R-PC):
+# setup namespaces
+sudo ip netns add PC1
+sudo ip netns add R1
+sudo ip netns add R2
+sudo ip netns add R3
+sudo ip netns add PC2
+
+# link namespaces by connecting ports
+sudo ip link add veth-PC1 type veth peer name veth-R1-1
+sudo ip link add veth-R1-2 type veth peer name veth-R2-1
+sudo ip link add veth-R2-2 type veth peer name veth-R3-1
+sudo ip link add veth-R3-2 type veth peer name veth-PC2
+
+# connect ports to namespaces
+sudo ip link set veth-PC1 netns PC1
+sudo ip link set veth-R1-1 netns R1
+sudo ip link set veth-R1-2 netns R1
+sudo ip link set veth-R2-1 netns R2
+sudo ip link set veth-R2-2 netns R2
+sudo ip link set veth-R3-1 netns R3
+sudo ip link set veth-R3-2 netns R3
+sudo ip link set veth-PC2 netns PC2
+
+# activate ports
+sudo ip netns exec PC1 ip link set veth-PC1 up
+sudo ip netns exec R1 ip link set veth-R1-1 up
+sudo ip netns exec R1 ip link set veth-R1-2 up
+sudo ip netns exec R2 ip link set veth-R2-1 up
+sudo ip netns exec R2 ip link set veth-R2-2 up
+sudo ip netns exec R3 ip link set veth-R3-1 up
+sudo ip netns exec R3 ip link set veth-R3-2 up
+sudo ip netns exec PC2 ip link set veth-PC2 up
+
+# configurate IP addresses
+sudo ip netns exec PC1 ip addr add 192.168.1.2/24 dev veth-PC1
+sudo ip netns exec R1 ip addr add 192.168.1.1/24 dev veth-R1-1
+sudo ip netns exec R1 ip addr add 192.168.3.1/24 dev veth-R1-2
+sudo ip netns exec R2 ip addr add 192.168.3.2/24 dev veth-R2-1
+sudo ip netns exec R2 ip addr add 192.168.4.1/24 dev veth-R2-2
+sudo ip netns exec R3 ip addr add 192.168.4.2/24 dev veth-R3-1
+sudo ip netns exec R3 ip addr add 192.168.5.2/24 dev veth-R3-2
+sudo ip netns exec PC2 ip addr add 192.168.5.1/24 dev veth-PC2

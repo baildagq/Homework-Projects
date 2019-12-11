@@ -22,9 +22,13 @@ uint8_t output[2048];
 // 1: 10.0.1.1
 // 2: 10.0.2.1
 // 3: 10.0.3.1
+// veth-R2-1 : 192.168.3.2  0x0203a8c0
+// veth-R2-2 : 192.168.4.1  0x0104a8c0
 // 你可以按需进行修改，注意端序
-in_addr_t addrs[N_IFACE_ON_BOARD] = {0x0100000a, 0x0101000a, 0x0102000a,
-                                     0x0103000a};
+// in_addr_t addrs[N_IFACE_ON_BOARD] = {0x0100000a, 0x0101000a, 0x0102000a,
+//                                      0x0103000a};
+in_addr_t addrs[N_IFACE_ON_BOARD] = {0x0203a8c0, 0x0104a8c0, 0x0102000a,
+                                    0x0103000a};
 
 void construct_IP_UDP_header(uint32_t total_len, uint32_t src, uint32_t dst) {
   // construct IP header
@@ -104,7 +108,7 @@ int main(int argc, char *argv[]) {
         .len = 24,        // small endian
         .if_index = i,    // small endian
         .nexthop = 0,     // big endian, means direct
-        .metric = 0
+        .metric = 1
     };
     update(true, entry);
   }
@@ -145,6 +149,7 @@ int main(int argc, char *argv[]) {
         _rip.command = 2;
         // packet len
         uint32_t packetLen = 20 + 8 + 4 + routerItemNum * 20;
+        printf("multi broadcast entry num: %d packlen: %d\n", routerItemNum, packetLen);
         // 构建 header
         construct_IP_UDP_header(packetLen, addrs[i], multicastIP);
         // 根据 header 计算 checksum
