@@ -328,38 +328,32 @@ int main(int argc, char *argv[]) {
             uint32_t metric = ntohl(entry.metric) + 1;
             int entrylen = mask_to_len(ntohl(entry.mask));
             if (isExist(entry.addr, entrylen, &idx)) {
-                  if (routerTable[idx].nexthop != 0) {
-
-              if (routerTable[idx].if_index == if_index) {
-                if (metric > 16) {
-                  // if (routerTable[idx].nexthop != 0) {
-                    // 判断不是直连路由
+              if (routerTable[idx].nexthop != 0) {
+                // 判断如果不是直连路由才更新
+                if (routerTable[idx].if_index == if_index) {
+                  if (metric > 16) {
                     // 删除
                     routerTable[idx] = routerTable[routerTableSize - 1];
                     routerTableSize -= 1;
                     ifupdate = true;
                     printf("  delete addr: %08x\n", entry.addr);
-                  // }
-                } else {
-                  // 无论好坏都更新
+                  } else {
+                    // 无论好坏都更新
+                    routerTable[i].if_index = if_index;
+                    routerTable[i].nexthop = src_addr;
+                    routerTable[i].metric = ntohl(metric); 
+                    ifupdate = true;
+                    printf("  update existed & index equal: %08x\n", entry.addr);
+                  }
+                } else if (metric < ntohl(routerTable[idx].metric)) {
+                  // 只有变好的情况才会更新
                   routerTable[i].if_index = if_index;
                   routerTable[i].nexthop = src_addr;
                   routerTable[i].metric = ntohl(metric); 
-                  ifupdate = true;
-                  printf("  update existed & index equal: %08x\n", entry.addr);
+                    printf("  update existed but index not-equal: %08x\n", entry.addr);
+                    ifupdate = true;
                 }
-              } else if (metric < ntohl(routerTable[idx].metric)) {
-                // 只有变好的情况才会更新
-                routerTable[i].if_index = if_index;
-                routerTable[i].nexthop = src_addr;
-                routerTable[i].metric = ntohl(metric); 
-                  printf("  update existed but index not-equal: %08x\n", entry.addr);
-                  ifupdate = true;
               }
-
-
-
-                  }
             } else if (metric <= 16) {
                 // 小于等于16且已有表中不存在，则新加
                 RoutingTableEntry new_entry;

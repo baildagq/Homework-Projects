@@ -28,7 +28,9 @@ bird -d -c bird_conf_R3.conf -P /home/bird_R3.pid -s /home/bird_R3.socket
 
 # Enable auto forwarding in linux, in one bash:
 echo 1 > /proc/sys/net/ipv4/conf/all/forwarding
+# look to find whether have make effect
 sudo ip netns exec R1 sysctl -w net.ipv4.ip_forward=1
+sudo ip netns exec R3 sysctl -w net.ipv4.ip_forward=1
 
 Delete auto forwarding in R2:
 sudo ip a delete 192.168.3.2/24 dev veth-R2-1
