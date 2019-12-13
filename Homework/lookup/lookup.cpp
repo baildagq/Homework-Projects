@@ -95,10 +95,6 @@ bool query(uint32_t addr, uint32_t *nexthop, uint32_t *if_index) {
   for (int i = 0;i < routerTableSize;i ++) {
     //   uint32_t mask = 0xffffffff >> (32 - routerTable[i].len);
       uint32_t mask = len_to_mask(routerTable[i].len);
-    //   printf("%d mask       %08x\n", i, mask);
-    //   printf("%08x\n", addr & mask);
-    //   printf("%08x\n", ntohl(addr) & mask);
-    //   printf("%08x\n", ntohl(routerTable[i].addr) & mask);
       if ((ntohl(routerTable[i].addr) & mask) == (ntohl(addr) & mask)) {
           if (routerTable[i].len > maxMask) {
               maxMask = routerTable[i].len;
