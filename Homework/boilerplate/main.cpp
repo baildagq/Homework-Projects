@@ -247,8 +247,6 @@ int main(int argc, char *argv[]) {
 
 
           //
-          resp.numEntries = 4;
-          resp.command = 2;
           int routerItemNum = 0;
           for (int j = 0;j < routerTableSize;j ++) {
             // 水平分割, 需要将改端口出的表项去掉
@@ -263,6 +261,8 @@ int main(int argc, char *argv[]) {
             resp.entries[j].nexthop = routerTable[j].nexthop;
             resp.entries[j].metric = routerTable[j].metric;
           }
+          resp.numEntries = routerItemNum;
+          resp.command = 2;
 
           // packet len
           uint32_t packetLen = 20 + 8 + 4 + routerItemNum * 20;
