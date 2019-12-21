@@ -26,31 +26,20 @@ uint8_t output[2048];
 // veth-R2-1 : 192.168.3.2  0x0203a8c0
 // veth-R2-2 : 192.168.4.1  0x0104a8c0
 // 你可以按需进行修改，注意端序
-// in_addr_t addrs[N_IFACE_ON_BOARD] = {0x0100000a, 0x0101000a, 0x0102000a,
-//                                      0x0103000a};
 in_addr_t addrs[N_IFACE_ON_BOARD] = {0x0203a8c0, 0x0104a8c0, 0x0102000a,
                                     0x0103000a};
 
-bool isDirectRoute (uint32_t src_addr) {
-    for (int i = 0;i < N_IFACE_ON_BOARD;i ++) {
-        if (src_addr == addrs[i]) {
-            return true;
-        }
-    }
-    return false;
-}
-
 void printCurrentTable() {
-    printf("current my table\n");
-    for (int i = 0;i < routerTableSize;i ++) {
-        printf("addr: %08x  len: %08x  if_index: %08x nexthop: %08x  metric: %08x\n", 
-            routerTable[i].addr,
-            routerTable[i].len,
-            routerTable[i].if_index,
-            routerTable[i].nexthop,
-            routerTable[i].metric
-            );
-    }
+  printf("current my table\n");
+  for (int i = 0;i < routerTableSize;i ++) {
+    printf("addr: %08x  len: %08x  if_index: %08x nexthop: %08x  metric: %08x\n", 
+      routerTable[i].addr,
+      routerTable[i].len,
+      routerTable[i].if_index,
+      routerTable[i].nexthop,
+      routerTable[i].metric
+      );
+  }
 }
 
 void construct_IP_UDP_header(uint32_t total_len, uint32_t src, uint32_t dst) {
@@ -96,16 +85,12 @@ uint32_t len_to_mask(uint32_t len) {
 }
 
 bool isExist(uint32_t addr, uint32_t len, uint32_t *idx) {
-  // printf("begin find if isExist\n");
   for (int i = 0;i < routerTableSize;i ++) {
-    // printf("addr1 %08x  addr2 %08x \n", addr, routerTable[i].addr);
-    // printf("len1  %08x  len2  %08x \n", len, routerTable[i].len);
     if (addr == routerTable[i].addr && len == routerTable[i].len) {
       *idx = i;
       return true;
     }
   }
-  // printf("end find if isExist\n");
   return false;
 }
 
@@ -144,9 +129,6 @@ int main(int argc, char *argv[]) {
       // send complete routing table to every interface
       // ref. RFC2453 3.8
       // multicast MAC for 224.0.0.9 is 01:00:5e:00:00:09
-
-
-
       // 使所有端口发送发送广播包
       for (uint32_t i = 0; i < N_IFACE_ON_BOARD; i++) {
         // 根据routerTable 构建 RipPacket
@@ -157,13 +139,11 @@ int main(int argc, char *argv[]) {
           if (routerTable[j].if_index == i)  {
             continue;
           }
-          // printf("update len %d\n", routerTable[j].len);
           uint32_t mask = len_to_mask(routerTable[j].len);
           _rip.entries[routerItemNum].addr = routerTable[j].addr;
           _rip.entries[routerItemNum].mask = ntohl(mask);
           _rip.entries[routerItemNum].nexthop = routerTable[j].nexthop;
           _rip.entries[routerItemNum].metric = routerTable[j].metric;
-          // printf("mask!!!  %08x\n", ntohl(mask));
           // 统计本端口考虑水平分割后可以接受的所有路由表的项数
           routerItemNum ++;
         }
@@ -171,7 +151,6 @@ int main(int argc, char *argv[]) {
         _rip.command = 2;
         // packet len
         uint32_t packetLen = 20 + 8 + 4 + routerItemNum * 20;
-        // printf("multi broadcast entry num: %d packlen: %d\n\n", routerItemNum, packetLen);
         // 构建 header
         construct_IP_UDP_header(packetLen, addrs[i], multicastIP);
         // 根据 header 计算 checksum
@@ -213,9 +192,7 @@ int main(int argc, char *argv[]) {
       continue;
     }
     in_addr_t src_addr, dst_addr;
-    // extract src_addr and dst_addr from packet
-    // big endian
-    // TODO 
+    // TODO: extract src_addr and dst_addr from packet (big endian)
     src_addr = ntohl(convert(packet[12], packet[13], packet[14], packet[15]));
     dst_addr = ntohl(convert(packet[16], packet[17], packet[18], packet[19]));
     
@@ -240,8 +217,9 @@ int main(int argc, char *argv[]) {
       // check and validate
       if (disassemble(packet, res, &rip)) {
         if (rip.command == 1) {
-          // 3a.3 request, ref. RFC2453 3.9.1
+          // 3a.3 request, ref. RFC2453 Section 3.9.1
           // only need to respond to whole table requests in the lab
+
           RipPacket resp;
           int routerItemNum = 0;
           for (int j = 0;j < routerTableSize;j ++) {
@@ -272,13 +250,14 @@ int main(int argc, char *argv[]) {
           assemble(&resp, output + 20 + 8);
           HAL_SendIPPacket(if_index, output, packetLen, multicastMac);
         } else {
-          // 3a.2 response, ref. RFC2453 3.9.2
-          // update routing table
+          // 3a.2 response, ref. RFC2453 Section 3.9.2
+          // TODO: update routing table
           // new metric = ?
           // update metric, if_index, nexthop
-          // what is missing from RoutingTableEntry?
-          // TODO: use query and update
-          // triggered updates? ref. RFC2453 3.10.1
+          // HINT: handle nexthop = 0 case
+          // HINT: what is missing from RoutingTableEntry?
+          // you might want to use `query` and `update` but beware of the difference between exact match and longest prefix match
+          // optional: triggered updates? ref. RFC2453 3.10.1
           printf("if_index: %d\n", if_index);
           printf("all give me rip\n");
           for (int i = 0;i < rip.numEntries;i ++) {
@@ -294,15 +273,9 @@ int main(int argc, char *argv[]) {
             uint32_t idx = 0;
             uint32_t metric = ntohl(entry.metric) + 1;
             int entrylen = mask_to_len(ntohl(entry.mask));
-            printf("making %08x\n", entry.addr);
             if (isExist(entry.addr, entrylen, &idx)) {
-                printf("exist\n");
-                printf("idx: %d\n", idx);
-              if (isDirectRoute(entry.addr)) {
-              // 判断如果不是直连路由才更新
-              // if (src_addr != 0x0103a8c0 && src_addr != 0x0204a8c0) {
-
-                printf("index1 %08x   index2  %08x\n", routerTable[idx].if_index, if_index);
+              if (routerTable[idx].nexthop != 0) {
+                // 判断如果不是直连路由才更新
                 if (routerTable[idx].if_index == if_index) {
                   if (metric > 16 ) {
                     // 删除
@@ -310,25 +283,21 @@ int main(int argc, char *argv[]) {
                     printCurrentTable();
                     routerTable[idx] = routerTable[routerTableSize - 1];
                     routerTableSize -= 1;
-                    printf("  delete exsit addr: %08x\n", entry.addr);
                   } else {
                     // 无论好坏都更新
                     routerTable[i].if_index = if_index;
                     routerTable[i].nexthop = src_addr;
                     routerTable[i].metric = ntohl(metric); 
-                    printf("  update existed & index equal: %08x\n", entry.addr);
                   }
                 } else if (metric < ntohl(routerTable[idx].metric)) {
                   // 只有变好的情况才会更新
                   routerTable[i].if_index = if_index;
                   routerTable[i].nexthop = src_addr;
                   routerTable[i].metric = ntohl(metric); 
-                  printf("  update existed but index not-equal: %08x\n", entry.addr);
                   ifupdate = true;
                 }
               }
             } else if (metric <= 16) {
-                printf("not exist\n");
                 ifupdate = true;
                 // 小于等于16且已有表中不存在，则新加
                 RoutingTableEntry new_entry;
@@ -341,16 +310,8 @@ int main(int argc, char *argv[]) {
                 new_entry.metric = ntohl(metric); 
                 routerTable[routerTableSize] = new_entry;
                 routerTableSize += 1;
-                printf("  add new: %08x\n", entry.addr);
             }
           }
-          if (ifupdate) {
-            printf("\n update something!\n\n");
-          } else {
-            printf("\n nothing update!\n\n");
-          }
-          printCurrentTable();
-          printf("\n\n\n\n");
         }
       }
     } else {
@@ -370,7 +331,7 @@ int main(int argc, char *argv[]) {
           memcpy(output, packet, res);
           // update ttl and checksum
           forward(output, res);
-          // TODO: you might want to check ttl=0 case
+          // TODO(optional): check ttl=0 case
           if (packet[8] == 0) {
             continue;
           }
@@ -378,12 +339,12 @@ int main(int argc, char *argv[]) {
         } else {
           // not found
           // you can drop it
-          printf("ARP not found for %x\n", nexthop);
+          printf("ARP not found for nexthop %x\n", nexthop);
         }
       } else {
         // not found
-        // optionally you can send ICMP Host Unreachable
-        printf("IP not found for %x\n", src_addr);
+        // TODO(optional): send ICMP Host Unreachable
+        printf("IP not found for src %x dst %x\n", src_addr, dst_addr);
       }
     }
   }
