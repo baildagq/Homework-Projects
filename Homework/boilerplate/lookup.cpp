@@ -40,7 +40,7 @@ using namespace std;
 
 // std::map<Key, RoutingTableEntry> routerTable;
 
-RoutingTableEntry routerTable[120];
+RoutingTableEntry routerTable[8000];
 int routerTableSize = 0;
 
 void update(bool insert, RoutingTableEntry entry) {

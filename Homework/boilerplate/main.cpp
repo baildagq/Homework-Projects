@@ -276,19 +276,19 @@ int main(int argc, char *argv[]) {
           // HINT: what is missing from RoutingTableEntry?
           // you might want to use `query` and `update` but beware of the difference between exact match and longest prefix match
           // optional: triggered updates? ref. RFC2453 3.10.1
-          printf("\n");
-          printf("!!!!!!!!!!!!!!!!!!!!!!!!!! all give me rip !!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-          printf("idx    address            mask       if      nexthop            metric \n");
-          for (int i = 0;i < rip.numEntries;i ++) {
-            printf("%-6d ", i);
-            printAddr(rip.entries[i].addr);
-            printf("%08x   ", rip.entries[i].mask);
-            printf("%-8d", if_index);
-            printAddr(rip.entries[i].nexthop);
-            printf("%-12d   ", ntohl(rip.entries[i].metric));
-            printf("\n");
-          }
-          printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+          // printf("\n");
+          // printf("!!!!!!!!!!!!!!!!!!!!!!!!!! all give me rip !!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+          // printf("idx    address            mask       if      nexthop            metric \n");
+          // for (int i = 0;i < rip.numEntries;i ++) {
+          //   printf("%-6d ", i);
+          //   printAddr(rip.entries[i].addr);
+          //   printf("%08x   ", rip.entries[i].mask);
+          //   printf("%-8d", if_index);
+          //   printAddr(rip.entries[i].nexthop);
+          //   printf("%-12d   ", ntohl(rip.entries[i].metric));
+          //   printf("\n");
+          // }
+          // printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 
 
           bool ifupdate = false;
@@ -301,7 +301,7 @@ int main(int argc, char *argv[]) {
             if (entrylen == 0)
                 continue;
             if (isExist(entry.addr, entrylen, &idx)) {
-              printf("exist current rip entry %d\n", i);
+              // printf("exist current rip entry %d\n", i);
               if (routerTable[idx].nexthop != 0) {
                 // 判断如果不是直连路由才更新
                 if (routerTable[idx].if_index == if_index) {
@@ -310,16 +310,16 @@ int main(int argc, char *argv[]) {
                     routerTable[idx] = routerTable[routerTableSize - 1];
                     routerTableSize -= 1;
                     ifupdate = true;
-                    printf("delete %d\n ", idx);
-                    printCurrentTable();
+                    // printf("delete %d\n ", idx);
+                    // printCurrentTable();
                   } else {
                     // 无论好坏都更新
                     routerTable[idx].if_index = if_index;
                     routerTable[idx].nexthop = src_addr;
                     routerTable[idx].metric = ntohl(metric); 
                     ifupdate = true;
-                    printf("update whatever %d\n ", idx);
-                    printCurrentTable();
+                    // printf("update whatever %d\n ", idx);
+                    // printCurrentTable();
                   }
                 } else if (metric < ntohl(routerTable[idx].metric)) {
                   // 只有变好的情况才会更新
@@ -327,8 +327,8 @@ int main(int argc, char *argv[]) {
                   routerTable[idx].nexthop = src_addr;
                   routerTable[idx].metric = ntohl(metric); 
                   ifupdate = true;
-                  printf("metric become small %d\n ", idx);
-                  printCurrentTable();
+                  // printf("metric become small %d\n ", idx);
+                  // printCurrentTable();
                 }
               }
             } else if (metric <= 16) {
@@ -345,8 +345,8 @@ int main(int argc, char *argv[]) {
                 routerTable[routerTableSize] = new_entry;
                 routerTableSize += 1;
                 ifupdate = true;
-                printf("add new routeEntry  %d\n ", idx);
-                printCurrentTable();
+                // printf("add new routeEntry  %d\n ", idx);
+                // printCurrentTable();
             }
           }
         }
