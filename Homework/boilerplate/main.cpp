@@ -160,11 +160,9 @@ int main(int argc, char *argv[]) {
         // 根据 RipPacket 更新buffer
         assemble(&_rip, output + 20 + 8);
         HAL_SendIPPacket(i, output, packetLen, multicastMac);
-
-
-
       }
       printf("5s Timer\n");
+      printCurrentTable();
       last_time = time;
     }
 
@@ -274,27 +272,34 @@ int main(int argc, char *argv[]) {
             uint32_t metric = ntohl(entry.metric) + 1;
             int entrylen = mask_to_len(ntohl(entry.mask));
             if (isExist(entry.addr, entrylen, &idx)) {
+              printf("exist current rip entry %d\n", i);
               if (routerTable[idx].nexthop != 0) {
                 // 判断如果不是直连路由才更新
                 if (routerTable[idx].if_index == if_index) {
                   if (metric > 16 ) {
                     // 删除
-                    ifupdate = true;
-                    printCurrentTable();
                     routerTable[idx] = routerTable[routerTableSize - 1];
                     routerTableSize -= 1;
+                    ifupdate = true;
+                    printf("***********************   delete %d  **********************\n ", idx);
+                    printCurrentTable();
                   } else {
                     // 无论好坏都更新
-                    routerTable[i].if_index = if_index;
-                    routerTable[i].nexthop = src_addr;
-                    routerTable[i].metric = ntohl(metric); 
+                    routerTable[idx].if_index = if_index;
+                    routerTable[idx].nexthop = src_addr;
+                    routerTable[idx].metric = ntohl(metric); 
+                    ifupdate = true;
+                    printf("***********************   metric random %d  **********************\n ", idx);
+                    printCurrentTable();
                   }
                 } else if (metric < ntohl(routerTable[idx].metric)) {
                   // 只有变好的情况才会更新
-                  routerTable[i].if_index = if_index;
-                  routerTable[i].nexthop = src_addr;
-                  routerTable[i].metric = ntohl(metric); 
+                  routerTable[idx].if_index = if_index;
+                  routerTable[idx].nexthop = src_addr;
+                  routerTable[idx].metric = ntohl(metric); 
                   ifupdate = true;
+                  printf("***********************   metric become small %d  **********************\n ", idx);
+                  printCurrentTable();
                 }
               }
             } else if (metric <= 16) {
@@ -310,6 +315,9 @@ int main(int argc, char *argv[]) {
                 new_entry.metric = ntohl(metric); 
                 routerTable[routerTableSize] = new_entry;
                 routerTableSize += 1;
+                ifupdate = true;
+                printf("***********************   add new routeEntry  %d  **********************\n ", idx);
+                printCurrentTable();
             }
           }
         }
