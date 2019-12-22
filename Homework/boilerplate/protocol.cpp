@@ -46,6 +46,8 @@
  * Mask 的二进制是不是连续的 1 与连续的 0 组成等等。
  */
 
+extern uint32_t convert(uint32_t a, uint32_t b, uint32_t c, uint32_t d);
+
 
 // IP 报头的长度根据 header Length 计算得到
 // UDP 报头根据观察和简单查询假定为8个字节
@@ -86,27 +88,45 @@ bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output) {
         if (tag != 0)
             return false;
         // check whether metric belong [0, 16]
-        uint32_t metric = ripEntry[16] << 24 | ripEntry[17] << 16 | ripEntry[18] << 8 | ripEntry[19];
+        uint32_t metric = convert(
+            ripEntry[16],
+            ripEntry[17],
+            ripEntry[18],
+            ripEntry[19]
+            );
         if (!(metric >= 1 && metric <= 16))
             return false;
         // check mask format
-        uint32_t mask = ripEntry[8] << 24 | ripEntry[9] << 16 | ripEntry[10] << 8 | ripEntry[11];
-        bool appear1 = false;
+        uint32_t mask = convert(
+            ripEntry[8],
+            ripEntry[9],
+            ripEntry[10],
+            ripEntry[11]
+            );
+        bool appear = false;
         for (int j = 0;j < 32; j++) {
             if (mask % 2 == 1) {
-                appear1 = true;
-            } else {
-                if (appear1){
-                    return false;
-                }
+                appear = true;
+            } else if (appear){
+                return false;
             }
             mask >>= 1;
         }
         // pass all check, begin record
-        output->entries[i].addr = ripEntry[7] << 24 | ripEntry[6] << 16 | ripEntry[5] << 8 | ripEntry[4]; 
-        output->entries[i].mask = ripEntry[11] << 24 | ripEntry[10] << 16 | ripEntry[9] << 8 | ripEntry[8];
-        output->entries[i].nexthop = ripEntry[15] << 24 | ripEntry[14] << 16 | ripEntry[13] << 8 | ripEntry[12]; 
-        output->entries[i].metric = ripEntry[19] << 24 | ripEntry[18] << 16 | ripEntry[17] << 8 | ripEntry[15];
+        output->entries[i].addr = convert(
+            ripEntry[7],
+            ripEntry[6],
+            ripEntry[5],
+            ripEntry[4]
+            )
+        output->entries[i].nexthop = convert(
+            ripEntry[15],
+            ripEntry[14],
+            ripEntry[13],
+            ripEntry[12]
+            )
+        output->entries[i].mask = ntohl(mask);
+        output->entries[i].metric = ntohl(metric);
     }
     return true;
 }
