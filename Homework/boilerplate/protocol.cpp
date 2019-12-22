@@ -113,19 +113,24 @@ bool disassemble(const uint8_t *packet, uint32_t len, RipPacket *output) {
             mask >>= 1;
         }
         // pass all check, begin record
-        output->entries[i].addr = convert(
-            ripEntry[7],
-            ripEntry[6],
-            ripEntry[5],
-            ripEntry[4]
-            )
         output->entries[i].nexthop = convert(
             ripEntry[15],
             ripEntry[14],
             ripEntry[13],
             ripEntry[12]
-            )
-        output->entries[i].mask = ntohl(mask);
+            );
+        output->entries[i].mask = convert(
+            ripEntry[11],
+            ripEntry[10],
+            ripEntry[9],
+            ripEntry[8]
+            );
+        output->entries[i].addr = convert(
+            ripEntry[7],
+            ripEntry[6],
+            ripEntry[5],
+            ripEntry[4]
+            );
         output->entries[i].metric = ntohl(metric);
     }
     return true;

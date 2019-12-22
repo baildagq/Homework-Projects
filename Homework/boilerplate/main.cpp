@@ -30,9 +30,11 @@ in_addr_t addrs[N_IFACE_ON_BOARD] = {0x0203a8c0, 0x0104a8c0, 0x0102000a,
                                     0x0103000a};
 
 void printCurrentTable() {
-  printf("current my table\n");
+  printf("\n");
+  printf("============== current my table ===============\n");
+  printf("addr:     len:     if_index: nexthop:   metric:\n", 
   for (int i = 0;i < routerTableSize;i ++) {
-    printf("addr: %08x  len: %08x  if_index: %08x nexthop: %08x  metric: %08x\n", 
+    printf("%08x  %08x  %08x  %08x  %08x\n", 
       routerTable[i].addr,
       routerTable[i].len,
       routerTable[i].if_index,
@@ -40,6 +42,8 @@ void printCurrentTable() {
       routerTable[i].metric
       );
   }
+  printf("===============================================\n");
+  printf("\n");
 }
 
 void construct_IP_UDP_header(uint32_t total_len, uint32_t src, uint32_t dst) {
@@ -257,14 +261,18 @@ int main(int argc, char *argv[]) {
           // you might want to use `query` and `update` but beware of the difference between exact match and longest prefix match
           // optional: triggered updates? ref. RFC2453 3.10.1
           printf("if_index: %d\n", if_index);
-          printf("all give me rip\n");
+          printf("\n");
+          printf("============= all give me rip ==========\n");
+          printf("addr      mask      nexthop   metric    \n");
           for (int i = 0;i < rip.numEntries;i ++) {
-            printf("addr: %08x  mask: %08x  nexthop: %08x  metric: %08x\n", 
+            printf("%08x  %08x  %08x  %08x\n", 
                     rip.entries[i].addr, 
                     rip.entries[i].mask, 
                     rip.entries[i].nexthop, 
                     rip.entries[i].metric);
           }
+          printf("========================================\n");
+          printf("\n");
           bool ifupdate = false;
           for (int i = 0;i < rip.numEntries;i ++) {
             RipEntry entry = rip.entries[i];
