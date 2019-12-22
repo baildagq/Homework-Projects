@@ -29,20 +29,29 @@ uint8_t output[2048];
 in_addr_t addrs[N_IFACE_ON_BOARD] = {0x0203a8c0, 0x0104a8c0, 0x0102000a,
                                     0x0103000a};
 
+void printAddr(uint32_t addr) {
+    uint32_t a1 = (addr & 0x000000ff);
+    uint32_t a2 = (addr & 0x0000ff00) >> 8;
+    uint32_t a3 = (addr & 0x00ff0000) >> 16;
+    uint32_t a4 = (addr & 0xff000000) >> 24;
+    // addr
+    printf("%-3d.%-3d.%-3d.%-3d    ", a1, a2, a3, a4);
+}
+
 void printCurrentTable() {
   printf("\n");
-  printf("============== current my table ===============\n");
-  printf("addr:     len:     if_index: nexthop:   metric:\n", 
+  printf("============================= current my table ========================\n");
+  printf("idx    address            len         if      nexthop            metric \n");
   for (int i = 0;i < routerTableSize;i ++) {
-    printf("%08x  %08x  %08x  %08x  %08x\n", 
-      routerTable[i].addr,
-      routerTable[i].len,
-      routerTable[i].if_index,
-      routerTable[i].nexthop,
-      routerTable[i].metric
-      );
+    printf("%-6d ", i);
+    printAddr(routerTable[i].addr);
+    printf("%-12d", routerTable[i].len);
+    printf("%-8d", routerTable[i].if_index);
+    printAddr(routerTable[i].nexthop);
+    printf("%-12d   ", ntohl(routerTable[i].metric));
+    printf("\n");
   }
-  printf("===============================================\n");
+  printf("====== ================================================================\n");
   printf("\n");
 }
 
@@ -260,19 +269,21 @@ int main(int argc, char *argv[]) {
           // HINT: what is missing from RoutingTableEntry?
           // you might want to use `query` and `update` but beware of the difference between exact match and longest prefix match
           // optional: triggered updates? ref. RFC2453 3.10.1
-          printf("if_index: %d\n", if_index);
           printf("\n");
-          printf("============= all give me rip ==========\n");
-          printf("addr      mask      nexthop   metric    \n");
+          printf("********************** all give me rip **************************\n");
+          printf("idx     address            mask         if      nexthop            metric \n");
           for (int i = 0;i < rip.numEntries;i ++) {
-            printf("%08x  %08x  %08x  %08x\n", 
-                    rip.entries[i].addr, 
-                    rip.entries[i].mask, 
-                    rip.entries[i].nexthop, 
-                    rip.entries[i].metric);
+            printf("%-6d ", i);
+            printAddr(rip.entries[i].addr);
+            printf("%08x", rip.entries[i].mask);
+            printf("%-8d", if_index);
+            printAddr(rip.entries[i].nexthop);
+            printf("%-12d   ", ntohl(rip.entries[i].metric));
+            printf("\n");
           }
-          printf("========================================\n");
-          printf("\n");
+          printf("****************************************************************\n");
+
+
           bool ifupdate = false;
           for (int i = 0;i < rip.numEntries;i ++) {
             RipEntry entry = rip.entries[i];
@@ -289,7 +300,7 @@ int main(int argc, char *argv[]) {
                     routerTable[idx] = routerTable[routerTableSize - 1];
                     routerTableSize -= 1;
                     ifupdate = true;
-                    printf("***********************   delete %d  **********************\n ", idx);
+                    printf("delete %d\n ", idx);
                     printCurrentTable();
                   } else {
                     // 无论好坏都更新
@@ -297,7 +308,7 @@ int main(int argc, char *argv[]) {
                     routerTable[idx].nexthop = src_addr;
                     routerTable[idx].metric = ntohl(metric); 
                     ifupdate = true;
-                    printf("***********************   metric random %d  **********************\n ", idx);
+                    printf("update whatever %d\n ", idx);
                     printCurrentTable();
                   }
                 } else if (metric < ntohl(routerTable[idx].metric)) {
@@ -306,7 +317,7 @@ int main(int argc, char *argv[]) {
                   routerTable[idx].nexthop = src_addr;
                   routerTable[idx].metric = ntohl(metric); 
                   ifupdate = true;
-                  printf("***********************   metric become small %d  **********************\n ", idx);
+                  printf("metric become small %d\n ", idx);
                   printCurrentTable();
                 }
               }
@@ -324,7 +335,7 @@ int main(int argc, char *argv[]) {
                 routerTable[routerTableSize] = new_entry;
                 routerTableSize += 1;
                 ifupdate = true;
-                printf("***********************   add new routeEntry  %d  **********************\n ", idx);
+                printf("add new routeEntry  %d\n ", idx);
                 printCurrentTable();
             }
           }
