@@ -270,18 +270,18 @@ int main(int argc, char *argv[]) {
           // you might want to use `query` and `update` but beware of the difference between exact match and longest prefix match
           // optional: triggered updates? ref. RFC2453 3.10.1
           printf("\n");
-          printf("********************** all give me rip **************************\n");
-          printf("idx     address            mask         if      nexthop            metric \n");
+          printf("!!!!!!!!!!!!!!!!!!!!!!!!!! all give me rip !!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+          printf("idx    address            mask       if      nexthop            metric \n");
           for (int i = 0;i < rip.numEntries;i ++) {
             printf("%-6d ", i);
             printAddr(rip.entries[i].addr);
-            printf("%08x", rip.entries[i].mask);
+            printf("%08x   ", rip.entries[i].mask);
             printf("%-8d", if_index);
             printAddr(rip.entries[i].nexthop);
             printf("%-12d   ", ntohl(rip.entries[i].metric));
             printf("\n");
           }
-          printf("****************************************************************\n");
+          printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 
 
           bool ifupdate = false;
@@ -290,6 +290,9 @@ int main(int argc, char *argv[]) {
             uint32_t idx = 0;
             uint32_t metric = ntohl(entry.metric) + 1;
             int entrylen = mask_to_len(ntohl(entry.mask));
+            // special judge, not add 0.0.0.0
+            if (entrylen == 0)
+                continue;
             if (isExist(entry.addr, entrylen, &idx)) {
               printf("exist current rip entry %d\n", i);
               if (routerTable[idx].nexthop != 0) {
