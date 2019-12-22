@@ -159,20 +159,27 @@ int main(int argc, char *argv[]) {
           _rip.entries[routerItemNum].metric = routerTable[j].metric;
           // 统计本端口考虑水平分割后可以接受的所有路由表的项数
           routerItemNum ++;
+
+          // satisfy 25 send
+          if (routerItemNum == 25 || j == (routerTableSize - 1)) {
+            _rip.numEntries = routerItemNum;
+            _rip.command = 2;
+            // packet len
+            uint32_t packetLen = 20 + 8 + 4 + routerItemNum * 20;
+            // 构建 header
+            construct_IP_UDP_header(packetLen, addrs[i], multicastIP);
+            // 根据 header 计算 checksum
+            uint16_t sum = computeIPChecksum(output, packetLen);
+            output[10] = (sum >> 8) & 0xff;
+            output[11] = sum & 0xff;
+            // 根据 RipPacket 更新buffer
+            assemble(&_rip, output + 20 + 8);
+            HAL_SendIPPacket(i, output, packetLen, multicastMac);
+            
+            // after send, init routerItemNum
+            routerItemNum = 0;
+          }
         }
-        _rip.numEntries = routerItemNum;
-        _rip.command = 2;
-        // packet len
-        uint32_t packetLen = 20 + 8 + 4 + routerItemNum * 20;
-        // 构建 header
-        construct_IP_UDP_header(packetLen, addrs[i], multicastIP);
-        // 根据 header 计算 checksum
-        uint16_t sum = computeIPChecksum(output, packetLen);
-        output[10] = (sum >> 8) & 0xff;
-        output[11] = sum & 0xff;
-        // 根据 RipPacket 更新buffer
-        assemble(&_rip, output + 20 + 8);
-        HAL_SendIPPacket(i, output, packetLen, multicastMac);
       }
       printf("5s Timer\n");
       printCurrentTable();
