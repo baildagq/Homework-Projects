@@ -1,0 +1,137 @@
+\documentclass[]{article}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{ctex}
+\usepackage{xeCJK}  
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{geometry}
+\geometry{a4paper,left=3cm,right=3cm,top=2cm,bottom=2cm}
+\lstset{
+    language = VHDL,
+    numbers=left, 
+	breaklines=true,
+    numberstyle= \tiny, 
+    keywordstyle= \color{ blue!70},
+    commentstyle= \color{red!50!green!50!blue!50}, 
+    frame=shadowbox, % 阴影效果
+    rulesepcolor= \color{ red!20!green!20!blue!20} ,
+    escapeinside=``, % 英文分号中可写入中文
+    xleftmargin=2em,xrightmargin=2em, aboveskip=1em,
+    framexleftmargin=2em,
+    tabsize=2
+} 
+
+\title{人工智能导论\\ 拼音输入法作业报告}
+\author{齐强 2017011436 计75}
+
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+%abstract
+
+\section{快速使用}
+\begin{enumerate}
+    \item note:以下命令需要在src文件夹下运行
+    \item help: python3 main.py -h
+    \item train: python3 --train --data \{指定训练数据path\}
+    \item valid: python3 --input \{input file path\} --output \{output file path\}
+\end{enumerate}
+
+\section{文件结构}
+\begin{enumerate}
+    \item{src: 包含正式代码与自动测试相关代码
+        \begin{itemize}
+            \item common.py: 包含通用的设置，包括模型相关文件all-ch.txt, pinyin2ch.txt和模型的路径、总字数的数量等
+            \item model.py: 包含Model类(代码主要部分），根据输入进行训练或预测
+            \item main.py: 解析选项，决定训练或预测，解析inputfile，将一行的拼音转成list后调用model predict()预测，并将答案输出到outputfile
+            \item train.sh: 训练脚本（新闻文件有点多，手动训练有点慢...)
+        %    \item gen\_text.py: 从新闻训练数据中找出一定数量文本，并由句号、逗号分割产生粗糙训练文本
+        %    \item gen\_py.py: 由粗糙训练文本产生拼音数据文件与正确答案文件
+        %    \item valid.py: 根据main.py 产生的预测结果与gen\_py.py 产生的正确答案，得出模型准确率
+        %    \item antutest.sh: 自动测试脚本
+            \item autotest.sh | gen\_text.py | gen\_py.py | valid.py 自动测试相关
+        \end{itemize}
+    } 
+    \item{data: 包含存储输入输入文件
+    }
+    \item{model: 包含模型相关文件
+        \begin{itemize}
+            \item all-ch.txt: 给定文件，确定所有进行统计的汉字
+            \item pinyin2ch.txt: 给定文件，根据拼音确定相应可能汉字
+            \item dict.json: 用于存储训练时与测试时需要用到的常用dict (省去部分准备时间)
+            \item model.npz: 模型文件，采用numpy的数据存储格式，包含1-gram, 2-gram, 3-gram 组的出现频数
+        \end{itemize}
+
+    }
+\end{enumerate}
+
+\section{算法思路}
+\begin{enumerate}
+    \item 最终实现了字的二元、三元相结合的算法,同时保留了单二元的方法
+    \item {
+        train part:
+        \begin{itemize}
+            \item 遍历给定数据，统计所有单字出现的频数与所有2元组出现的频数，将结果分别保存在c1, c2数组中
+            \item 取出c2数组中记录下的前 6763 高频的2元组，重新遍历训练数据，统计以这些高频2元组+其他字做3元组的出现频数
+        \end{itemize}
+    }
+    \item {
+        predict part:
+        \begin{itemize}
+            \item{
+                predict(): 2元预测\\
+                $
+                    prob_{i,j} = max(prob_{i-1,k} + log(N(\omega_{i,j}\omega_{i-1,k})) - log(N(\omega_{i-1,k})))
+                $
+            }
+            \item{
+                predict2(): 2元 + 3元预测\\
+                $if\ \omega_{lk}\  in\  [high frequency 2-gram word]:$\\
+                \ \ \ \ $prob_{i, kj} = max(prob_{i-1, lk} + log(N(\omega_{i-2,l}\omega_{i-1,k}\omega_{i,j})) - log(N(\omega_{i-2,l}\omega_{i-1,k}))) $\\
+                $else$\\
+                \ \ \ \ $prob_{i, kj} = max(prob_{i-1, lk} + log(\omega_{i-1,k}\omega_{i,j})) - log(N(\omega_{i-1,k}))) $\\
+
+            }
+        \end{itemize}
+    }
+\end{enumerate}
+
+\section{测试效果}
+写了一些自动测试代码，从新闻训练数据中找出一定数量文本，并由句号、逗号分割产生粗糙训练文本,由粗糙训练文本产生拼音数据文件与正确答案文件,根据main.py 产生的预测结果与gen\_py.py 产生的正确答案进行对比，得出模型准确率
+
+\begin{center}
+    \begin{tabular}{lllll}
+    \hline
+    seq & total line & accuracy line & total word & accuracy word \\ \hline
+     0 & 131& 0.2977& 1885 & 0.8233\\ \hline 
+     1 & 153& 0.1699& 2266 & 0.7691\\ \hline
+     2 & 196& 0.2102& 3059 & 0.8394\\ \hline
+     3 & 167& 0.2455& 2135 & 0.8018\\ \hline
+     4 & 100& 0.2300& 1436 & 0.7994\\ \hline
+     5 & 212& 0.2783& 2304 & 0.8085\\ \hline
+    \end{tabular}
+\end{center}
+
+\section{总结收获}
+\begin{enumerate}
+    \item{问题：
+        \begin{itemize}
+            \item 无法对多音字进行判断，导致训练时会存在偏差
+            \item 因为时间有些来不及，没有更好的调参，对于平滑处理等不是很好
+        \end{itemize}    
+    }
+    \item{
+        总结：
+        \begin{itemize}
+            \item 2元与3元结合能够提升一些名词较长的句子的准确率
+            \item 训练语料库与测试集的相关性，对于准确率有着非常大的影响，增加训练语料库会提高一定的正确率
+        \end{itemize}
+    }
+\end{enumerate}
+
+
+\end{document}

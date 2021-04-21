@@ -1,0 +1,35 @@
+#include "setdialog.h"
+#include "ui_setdialog.h"
+
+setDialog::setDialog(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::setDialog)
+{
+    ui->setupUi(this);
+}
+
+setDialog::~setDialog()
+{
+    delete ui;
+}
+
+void setDialog::initSetting(){
+    QStringList stringList;
+    stringList << "黑子" << "红子";
+    ui->Select_Black_Red->addItems(stringList);
+    ui->Select_Black_Red->setCurrentIndex(0);
+
+    stringList.clear();
+    stringList << "黑方" << "红方";
+    ui->Select_Former_Later->addItems(stringList);
+    ui->Select_Former_Later->setCurrentIndex(0);
+
+    ui->setWaitTime->setText(QString::number(30));
+
+    stringList.clear();
+
+    ui->setServerIP->setText("localHost");
+
+    ui->setServerPot->setText("8888");
+
+}

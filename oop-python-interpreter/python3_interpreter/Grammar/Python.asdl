@@ -1,0 +1,69 @@
+-- Simplified ASDL
+
+-- module        ::= "module" Id "{" [definitions] "}"
+-- definitions   ::= { TypeId "=" type }
+-- type          ::= product | sum
+-- product       ::= fields ["attributes" fields]
+-- fields        ::= "(" { field, "," } field ")"
+-- field         ::= TypeId ["?" | "*"] [Id]
+-- sum           ::= constructor { "|" constructor } ["attributes" fields]
+-- constructor   ::= ConstructorId [fields]
+
+module Python
+{
+    mod  = Module(stmt *body,string ?docstring)
+         | Interactive(stmt *body)
+         | Expression(expr body)
+    stmt = FunctionDef(identifier name,arguments args,stmt *body)
+         | ClassDef(identifier name,expr *bases,stmt *body)
+         | Return(expr ?value)
+         | Assign(expr *targets,expr value)
+         | AugAssign(expr target,operator op,expr value)
+         | For(expr target,expr iter,stmt *body,stmt *orelse)
+         | While(expr test,stmt *body,stmt *orelse)
+         | If(expr test,stmt *body,stmt *orelse)
+         | Expr(expr value)
+         | Nonlocal(identifier *names)
+         | Global(identifier *names)
+         | Pass
+         | Break
+         | Continue
+         attributes (int lineno,int col_offset)
+
+    expr = BoolOp(boolop op,expr *values)
+         | BinOp(expr left,operator op,expr right)
+         | UnaryOp(unaryop op,expr operand)
+         | Compare(expr left,cmpop *ops,expr *comparators)
+         | Call(expr func,expr *args,keyword *keywords)
+         | Name(identifier id,expr_context ctx)
+         | NameConstant(singleton value)
+         | Tuple(expr *elts,expr_context ctx)
+         | List(expr *elts,expr_context ctx)
+         | ListComp(expr elt,comprehension *generators)
+         | Attribute(expr value,identifier id,expr_context ctx)
+         | Subscript(expr value, slice slice, expr_context ctx)
+         | IfExpr(expr test,expr body,expr orelse)
+         | Dict(expr *keys,expr *values)
+         | Yield(expr ?value)
+         | Num(object n)
+         | Str(string s)
+         | Ellipsis
+         attributes(int lineno,int col_offset)
+    boolop = And | Or
+    operator = Add | Sub | Mult | Div | Mod | Pow | LSHIFT | RSHIFT | BitOr | BitXor | BitAnd | FloorDiv
+    unaryop = Invert | Not | UAdd | USub
+    cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn
+    expr_context = Load | Store | Del | AugLoad | AugStore | Param
+
+    slice  = Slice(expr ?lower, expr ?upper, expr ?step)
+        | ExtSlice(slice *dims)
+        | Index(expr value)
+
+    arguments =(arg* args)
+
+    arg = (identifier args)
+        attributes (int lineno,int col_offset)
+    keyword = (identifier ?arg,expr value)
+
+    comprehension = (expr target,expr iter,expr *ifs)
+}

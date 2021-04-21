@@ -1,0 +1,7 @@
+﻿cl : 命令行 warning D9035: “Gm”选项已否决，并将在将来的版本中移除
+  Strategy.cpp
+  Judge.cpp
+  正在生成代码...
+Judge.obj : warning LNK4075: 忽略“/EDITANDCONTINUE”(由于“/SAFESEH”规范)
+    正在创建库 D:\_program\rz\chess\MyStrategy-1\Debug\Strategy.lib 和对象 D:\_program\rz\chess\MyStrategy-1\Debug\Strategy.exp
+  Strategy.vcxproj -> D:\_program\rz\chess\MyStrategy-1\Debug\Strategy.dll

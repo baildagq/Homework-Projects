@@ -1,0 +1,65 @@
+#pragma once
+#include "common.h"
+enum{
+    ENDMARKER=0,
+    NAME,
+    NUMBER,
+    STRING,
+    NEWLINE,
+    INDENT,
+    DEDENT,
+    LPAR,
+    RPAR,
+    LSQB,
+    RSQB,
+    COLON,
+    STAR,
+    VBAR,
+    PLUS,
+    MINUS,
+
+    COMMA,
+    SEMI,
+    SLASH,
+    DOT,
+    AMPER,
+    LESS,
+    GREATER,
+    EQUAL,
+    PERCENT,
+    LBRACE,
+    RBRACE,
+    CIRCUMFLEX,
+    TILDE,
+    AT,
+
+    EQEQUAL,
+    NOTEQUAL,
+    LESSEQUAL,
+    LEFTSHIFT,
+    GREATEREQUAL,
+    RIGHTSHIFT,
+    PLUSEQUAL,
+    MINEQUAL,
+    RARROW,
+    DOUBLESTAR,
+    STAREQUAL,
+    DOUBLESLASH,
+    SLASHEQUAL,
+    VBAREQUAL,
+    PERCENTEQUAL,
+    AMPEREQUAL,
+    CIRCUMFLEXEQUAL,
+    ATEQUAL,
+
+    LEFTSHIFTEQUAL,
+    RIGHTSHIFTEQUAL,
+    DOUBLESTAREQUAL,
+    DOUBLESLASHEQUAL,
+    ELLIPSIS,
+};
+const int NT_OFFSET=256;
+inline bool IsTerminal(int type){return type<NT_OFFSET;}
+inline bool IsNonTerminal(int type){return type>=NT_OFFSET;}
+int TokenMap(std::string str);
+

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="news_category_id">
+        <item>news_rec</item>
+        <item>news_fun</item>
+        <item>news_mil</item>
+        <item>news_edu</item>
+        <item>news_cul</item>
+        <item>news_hea</item>
+        <item>news_mon</item>
+        <item>news_fit</item>
+        <item>news_car</item>
+        <item>news_tec</item>
+        <item>news_soc</item>
+    </string-array>
+
+    <string-array name="news_category_name">
+        <item>推荐</item>
+        <item>娱乐</item>
+        <item>军事</item>
+        <item>教育</item>
+        <item>文化</item>
+        <item>健康</item>
+        <item>财经</item>
+        <item>体育</item>
+        <item>汽车</item>
+        <item>科技</item>
+        <item>社会</item>
+    </string-array>
+</resources>

@@ -1,0 +1,3 @@
+data/dataset/
+src/__pycache__/
+model/model.npz

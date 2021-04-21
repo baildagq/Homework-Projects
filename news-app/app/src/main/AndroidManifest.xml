@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.newsapp">
+
+    <!-- Add internet permision -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+
+    <!--android:hardwareAccelerated="false"-->
+    <!--android:largeHeap="true"-->
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_desktop"
+        android:label="@string/app_name"
+
+        android:usesCleartextTraffic="true"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity android:name=".WelcomeActivity"
+            android:theme="@style/WelcomeTheme"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar">
+        </activity>
+
+        <activity
+            android:name=".NewsDetailActivity"
+            android:label="NewsDetail"
+            />
+        <activity android:name=".NewsChannelActivity"
+            android:label="Channel Manager"
+            />
+        <activity android:name=".CollectionActivity"
+            android:label="Collections"
+            />
+        <activity android:name=".HistoryActivity"
+            android:label="History"
+            />
+        <activity android:name=".SearchActivity"
+            android:label="Search"
+            />
+        <activity android:name=".SettingActivity"
+            android:label="Settings"
+            />
+    </application>
+
+</manifest>

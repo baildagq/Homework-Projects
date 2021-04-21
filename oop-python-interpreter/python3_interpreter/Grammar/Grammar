@@ -1,0 +1,72 @@
+# Simplified Grammar for Python
+# prune list, generator, lambda, star, class
+
+single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
+file_input: (NEWLINE | stmt)* ENDMARKER
+eval_input: testlist NEWLINE* ENDMARKER
+
+funcdef: 'def' NAME parameters ':' suite
+parameters: '(' [typedargslist] ')'
+typedargslist: tfpdef ['=' test] (',' tfpdef ['=' test])* [',']
+tfpdef: NAME
+
+test: or_test ['if' or_test 'else' test]
+or_test: and_test ('or' and_test)*
+and_test: not_test ('and' not_test)*
+not_test: 'not' not_test | comparison
+comparison: expr (comp_op expr)*
+comp_op: '<'|'>'|'=='|'>='|'<='|'!='
+
+expr: xor_expr ('|' xor_expr)*
+xor_expr: and_expr ('^' and_expr)*
+and_expr: shift_expr ('&' shift_expr)*
+shift_expr: arith_expr (('<<'|'>>') arith_expr)*
+arith_expr: term (('+'|'-') term)*
+term: factor (('*'|'/'|'%'|'//') factor)*
+factor: ('+'|'-'|'~') factor | power
+power: atom_expr ['**' factor]
+
+atom_expr: atom trailer*
+atom: '(' [testlist] ')' | '['[testlist_comp]']' | '{'[dictorsetmaker]'}' | NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False'
+trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME 
+subscriptlist: subscript (',' subscript)* [',']
+subscript: test | [test] ':' [test] [sliceop]
+sliceop: ':' [test]
+argument: test | test '=' test
+
+testlist_comp: test (comp_for | (',' test)* [','])
+
+arglist: argument (',' argument)* [',']
+testlist: test (',' test)* [',']
+exprlist: expr (',' expr)* [',']
+
+stmt: simple_stmt | compound_stmt
+simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
+small_stmt: expr_stmt | flow_stmt | pass_stmt | nonlocal_stmt | global_stmt
+
+nonlocal_stmt: 'nonlocal' NAME (',' NAME)*
+global_stmt: 'global' NAME (',' NAME)*
+
+expr_stmt: testlist (augassign testlist | ('=' testlist)*)
+pass_stmt: 'pass'
+flow_stmt: break_stmt | continue_stmt | return_stmt | yield_expr
+break_stmt: 'break'
+continue_stmt: 'continue'
+return_stmt: 'return' [testlist]
+yield_expr: 'yield' [testlist]
+
+comp_iter: comp_for | comp_if
+comp_for: 'for' exprlist 'in' or_test [comp_iter]
+comp_if: 'if' or_test [comp_iter]
+
+augassign: '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>=' | '**=' | '//='
+
+suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
+compound_stmt: if_stmt | while_stmt | for_stmt | funcdef | classdef
+if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
+while_stmt: 'while' test ':' suite ['else' ':' suite]
+for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
+
+classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
+
+dictorsetmaker: test ':' test (comp_for | (',' test ':' test)* [','])

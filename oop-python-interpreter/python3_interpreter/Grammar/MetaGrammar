@@ -1,0 +1,6 @@
+mstart: (NEWLINE|rule)* ENDMARKER
+rule: NAME ':' rhs NEWLINE
+rhs: alt ('|' alt)*
+alt: item+
+item: atom ['*'|'+'] | '[' rhs ']'
+atom: '(' rhs ')' | NAME | STRING

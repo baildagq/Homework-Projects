@@ -1,0 +1,42 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+ALLOWED_HOSTS	mysearch/settings.py	/^ALLOWED_HOSTS = []$/;"	v
+AUTH_PASSWORD_VALIDATORS	mysearch/settings.py	/^AUTH_PASSWORD_VALIDATORS = [$/;"	v
+BASE_DIR	mysearch/settings.py	/^BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))$/;"	v
+DATABASES	mysearch/settings.py	/^DATABASES = {$/;"	v
+DEBUG	mysearch/settings.py	/^DEBUG = True$/;"	v
+INSTALLED_APPS	mysearch/settings.py	/^INSTALLED_APPS = [$/;"	v
+LANGUAGE_CODE	mysearch/settings.py	/^LANGUAGE_CODE = 'en-us'$/;"	v
+MIDDLEWARE	mysearch/settings.py	/^MIDDLEWARE = [$/;"	v
+ROOT_URLCONF	mysearch/settings.py	/^ROOT_URLCONF = 'mysearch.urls'$/;"	v
+SECRET_KEY	mysearch/settings.py	/^SECRET_KEY = '*!)!3_7-6oh^7f-3&5m#ulvuse14g&ppn7f*+hma1qaz8=*5cc'$/;"	v
+STATICFILES_DIRS	mysearch/settings.py	/^STATICFILES_DIRS = ($/;"	v
+STATICFILES_FINDERS	mysearch/settings.py	/^STATICFILES_FINDERS = ($/;"	v
+STATIC_URL	mysearch/settings.py	/^STATIC_URL = '\/static\/'$/;"	v
+Server	mysearch/Server.py	/^class Server:$/;"	c
+TEMPLATES	mysearch/settings.py	/^TEMPLATES = [$/;"	v
+TIME_ZONE	mysearch/settings.py	/^TIME_ZONE = 'UTC'$/;"	v
+USE_I18N	mysearch/settings.py	/^USE_I18N = True$/;"	v
+USE_L10N	mysearch/settings.py	/^USE_L10N = True$/;"	v
+USE_TZ	mysearch/settings.py	/^USE_TZ = True$/;"	v
+WSGI_APPLICATION	mysearch/settings.py	/^WSGI_APPLICATION = 'mysearch.wsgi.application'$/;"	v
+__init__	mysearch/Server.py	/^	def __init__(self, db_path):$/;"	m	class:Server
+all	mysearch/view.py	/^def all(request):$/;"	f
+application	mysearch/wsgi.py	/^application = get_wsgi_application()$/;"	v
+get_brief	mysearch/Server.py	/^	def get_brief(self, id):$/;"	m	class:Server
+get_content	mysearch/Server.py	/^	def get_content(self, id):$/;"	m	class:Server
+get_item_list	mysearch/view.py	/^def get_item_list(ids):$/;"	f
+get_time	mysearch/Server.py	/^	def get_time(self, id):$/;"	m	class:Server
+get_title	mysearch/Server.py	/^	def get_title(self, id):$/;"	m	class:Server
+index	mysearch/view.py	/^def index(request):$/;"	f
+load_to_memory	mysearch/Server.py	/^	def load_to_memory(self):$/;"	m	class:Server
+number_article_per_page	mysearch/view.py	/^number_article_per_page = 10$/;"	v
+page	mysearch/view.py	/^def page(request):$/;"	f
+search	mysearch/view.py	/^def search(request):$/;"	f
+search_item	mysearch/Server.py	/^	def search_item(self, keyword):$/;"	m	class:Server
+server	mysearch/view.py	/^server = Server.Server('..\/pages.db')$/;"	v
+urlpatterns	mysearch/urls.py	/^urlpatterns = [$/;"	v

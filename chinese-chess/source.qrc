@@ -1,0 +1,23 @@
+<RCC>
+    <qresource prefix="/image">
+        <file>image/background.png</file>
+        <file>image/black_0.png</file>
+        <file>image/black_1.png</file>
+        <file>image/black_2.png</file>
+        <file>image/black_3.png</file>
+        <file>image/black_4.png</file>
+        <file>image/black_5.png</file>
+        <file>image/black_6.png</file>
+        <file>image/red_0.png</file>
+        <file>image/red_1.png</file>
+        <file>image/red_2.png</file>
+        <file>image/red_3.png</file>
+        <file>image/red_4.png</file>
+        <file>image/red_5.png</file>
+        <file>image/red_6.png</file>
+    </qresource>
+    <qresource prefix="/audio" lang="zh"/>
+    <qresource prefix="/">
+        <file>audio/check.mp3</file>
+    </qresource>
+</RCC>

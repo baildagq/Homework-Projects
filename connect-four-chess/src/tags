@@ -1,0 +1,76 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+Backup	Example.cpp	/^	void Backup(Node *selectedNode, double deltaProfit) { selectedNode -> backup(deltaProfit); }$/;"	f	class:UCT	file:
+BestChild	Example.cpp	/^	Node *BestChild(Node *father) { return father -> bestChild(); }$/;"	f	class:UCT	file:
+BoardState	Example.cpp	/^	int **BoardState() const { \/\/复制棋盘状态数组boardState $/;"	f	class:Node	file:
+COMPUTER_CHANCE	Example.cpp	12;"	d	file:
+COMPUTER_WIN_PROFIT	Example.cpp	15;"	d	file:
+DefaultPolicy	Example.cpp	/^	double DefaultPolicy(Node *selectedNode) { $/;"	f	class:UCT	file:
+EMPTY	Example.cpp	10;"	d	file:
+Expand	Example.cpp	/^	Node *Expand(Node *presentNode) { return presentNode -> expand(rightChange(presentNode -> chessman())); }$/;"	f	class:UCT	file:
+JUDGE_H_	Judge.h	14;"	d
+Node	Example.cpp	/^	Node(int **board, int *top, int r, int c, int noX, int noY, int depth = 0, int x = -1, int y = -1, int playingRight = COMPUTER_CHANCE, Node* _father = NULL): $/;"	f	class:Node
+Node	Example.cpp	/^class Node$/;"	c	file:
+PLAYER_CHANCE	Example.cpp	11;"	d	file:
+PLAYER_WIN_PROFIT	Example.cpp	14;"	d	file:
+POINT_H_	Point.h	9;"	d
+Point	Point.h	/^	Point(int x, int y){$/;"	f	class:Point
+Point	Point.h	/^class Point{$/;"	c
+Profit	Example.cpp	/^	int Profit(int **board, int *top, int chessman, int x, int y) const { $/;"	f	class:UCT	file:
+STRATEGY_H_	Strategy.h	9;"	d
+TIE_PROFIT	Example.cpp	16;"	d	file:
+TIME_LIMITATION	Example.cpp	13;"	d	file:
+TopState	Example.cpp	/^	int *TopState() const { \/\/复制棋盘顶端状态数组topState $/;"	f	class:Node	file:
+TreePolicy	Example.cpp	/^	Node *TreePolicy(Node *presentNode) {$/;"	f	class:UCT	file:
+UCT	Example.cpp	/^	UCT(int row, int column, int noX, int noY): _row(row), _column(column), _noX(noX), _noY(noY), startTime(clock()) {}$/;"	f	class:UCT
+UCT	Example.cpp	/^class UCT$/;"	c	file:
+UCTSearch	Example.cpp	/^	Node *UCTSearch(int **boardState, int *topState) {$/;"	f	class:UCT
+UNTERMINAL_STATE	Example.cpp	17;"	d	file:
+VITALITY_COEFFICIENT	Example.cpp	18;"	d	file:
+__UCT_H__	Example.cpp	2;"	d	file:
+_chessman	Example.cpp	/^	int _chessman; \/\/我方持子属性 $/;"	m	class:Node	file:
+_column	Example.cpp	/^	int _row, _column; \/\/行数、列数$/;"	m	class:UCT	file:
+_depth	Example.cpp	/^	int _depth; \/\/节点深度 $/;"	m	class:Node	file:
+_noX	Example.cpp	/^	int _noX, _noY; \/\/不可落子点位置 $/;"	m	class:Node	file:
+_noX	Example.cpp	/^	int _noX, _noY; \/\/不可落子点的位置 $/;"	m	class:UCT	file:
+_noY	Example.cpp	/^	int _noX, _noY; \/\/不可落子点位置 $/;"	m	class:Node	file:
+_noY	Example.cpp	/^	int _noX, _noY; \/\/不可落子点的位置 $/;"	m	class:UCT	file:
+_root	Example.cpp	/^	Node *_root; \/\/根节点$/;"	m	class:UCT	file:
+_row	Example.cpp	/^	int _row, _column; \/\/行数、列数$/;"	m	class:UCT	file:
+_x	Example.cpp	/^	int _x, _y; \/\/前一上落子位置$/;"	m	class:Node	file:
+_y	Example.cpp	/^	int _x, _y; \/\/前一上落子位置$/;"	m	class:Node	file:
+backup	Example.cpp	/^	void backup(double deltaProfit) {$/;"	f	class:Node
+bestChild	Example.cpp	/^	Node *bestChild() {$/;"	f	class:Node
+boardState	Example.cpp	/^	int **boardState; \/\/棋局状态$/;"	m	class:Node	file:
+chessman	Example.cpp	/^	int chessman() const { return _chessman; }$/;"	f	class:Node
+children	Example.cpp	/^	Node **children; \/\/子节点$/;"	m	class:Node	file:
+clear	Example.cpp	/^	void clear() { \/\/空间释放$/;"	f	class:Node	file:
+clearArray	Strategy.cpp	/^void clearArray(int M, int N, int** board){$/;"	f
+clearPoint	Strategy.cpp	/^extern "C" __declspec(dllexport) void clearPoint(Point* p){$/;"	f
+column	Example.cpp	/^	int row, column; \/\/棋盘大小（M, N）$/;"	m	class:Node	file:
+expand	Example.cpp	/^	Node *expand(int playingRight) { $/;"	f	class:Node
+expandableNode	Example.cpp	/^	int *expandableNode; \/\/可扩展节点编号 $/;"	m	class:Node	file:
+expandableNum	Example.cpp	/^	int expandableNum; \/\/可扩展节点数量 $/;"	m	class:Node	file:
+father	Example.cpp	/^	Node *father; \/\/父节点$/;"	m	class:Node	file:
+getPoint	Strategy.cpp	/^extern "C" __declspec(dllexport) Point* getPoint(const int M, const int N, const int* top, const int* _board, $/;"	f
+isExpandable	Example.cpp	/^	bool isExpandable() const { return expandableNum > 0; }\/\/是否可扩展$/;"	f	class:Node
+isTerminal	Example.cpp	/^	bool isTerminal() {$/;"	f	class:Node
+isTie	Judge.cpp	/^bool isTie(const int N, const int* top){$/;"	f
+machineWin	Judge.cpp	/^bool machineWin(const int x, const int y, const int M, const int N, int* const* board){$/;"	f
+placeChessman	Example.cpp	/^	void placeChessman(int **board, int *top, int chessman, int &x, int &y) {$/;"	f	class:UCT	file:
+profit	Example.cpp	/^	double profit; \/\/当前状态我方收益$/;"	m	class:Node	file:
+rightChange	Example.cpp	/^	int rightChange(int chessman) const {$/;"	f	class:UCT	file:
+row	Example.cpp	/^	int row, column; \/\/棋盘大小（M, N）$/;"	m	class:Node	file:
+startTime	Example.cpp	/^	int startTime; \/\/计算开始时间$/;"	m	class:UCT	file:
+topState	Example.cpp	/^	int *topState; \/\/顶端状态$/;"	m	class:Node	file:
+userWin	Judge.cpp	/^bool userWin(const int x, const int y, const int M, const int N, int* const* board){$/;"	f
+visitedNum	Example.cpp	/^	int visitedNum; \/\/被访问次数 $/;"	m	class:Node	file:
+x	Example.cpp	/^	int x() const { return _x; }$/;"	f	class:Node
+x	Point.h	/^	int x;$/;"	m	class:Point
+y	Example.cpp	/^	int y() const { return _y; }$/;"	f	class:Node
+y	Point.h	/^	int y;$/;"	m	class:Point
+~UCT	Example.cpp	/^	~UCT() { _root -> clear(); delete _root; } $/;"	f	class:UCT
